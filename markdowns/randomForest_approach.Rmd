@@ -1,0 +1,137 @@
+---
+title: "RandomForest_aproach"
+author: "Rodolfo Pelinson"
+date: "2024-11-04"
+output: github_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r,  echo= FALSE, eval = TRUE, warning=FALSE, message=FALSE}
+source("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/scripts/ajeitando_planilhas.R")
+```
+
+# Random Forests Approach
+
+```{r, echo= FALSE, eval = TRUE, warning=FALSE, message=FALSE}
+library(vegan)
+library(corrplot)
+
+all <- responses$all
+predictors_cor <- predictors[,-ncol(predictors)]
+pred_names <- c("Area", "Slope", "CI", "Discharge", "TOC", "%_Impermeabilization", "%_Urban_cover", "Houses_without_sanitation", "Average_Income", "Inhabitants")
+colnames(predictors_cor) <- pred_names
+cors <- cor(predictors_cor, use = "pairwise.complete.obs")
+cors2 <- cor.mtest(predictors_cor, use = "pairwise.complete.obs")
+cors0 <- cors
+cors0[which(cors < 0.5 & cors > -0.5)] <- 0 
+
+#corrplot(cors, method = "circle", type = "lower")
+#corrplot(cors, method = "circle", type = "lower", sig.level = 0.05, p.mat = cors2$p, insig = "blank")
+#corrplot(cors0, method = "circle", type = "lower")
+
+```
+
+```{r}
+#pred_mod_sel <- select(predictors, area, casas_sem_saneamento, renda, habitantes)
+pred_mod_sel <- select(predictors_cor,  Houses_without_sanitation, Average_Income, Inhabitants)
+
+#Padronizando
+Preditoras_stand <- decostand(pred_mod_sel, method = "stand")
+```
+
+```{r, message=FALSE, warning=FALSE}
+library(randomForest)
+
+set.seed(135); RFmodel <- randomForest(all ~ Houses_without_sanitation + Average_Income + Inhabitants,
+                        data = Preditoras_stand, proximity = TRUE, ntree = 100000,
+                        mtry = 3, importance = TRUE)
+RFmodel
+
+varImpPlot(RFmodel)
+```
+
+These are measures of variable importance. Both measures agree that the number of houses without sanitation and the number of inhabitants in the watershed are important variables, followed by average income, which is also exhibits good values of importance.
+
+```{r}
+partialPlot(RFmodel, Preditoras_stand, "Inhabitants")
+partialPlot(RFmodel, Preditoras_stand, "Houses_without_sanitation")
+partialPlot(RFmodel, Preditoras_stand, "Average_Income")
+```
+
+The effect of the number of inhabitants seems to be generally positive.
+
+The effect of the number of households without sanitation seems to have a strong positive effect as the number of houses goes from zero to a few, but then it strongly decreases.
+
+Finally, average income seems to have a positive effect on total antidepressant concentration.
+
+Something important is that average income and number of households without sanitation are somewhat correlated. We do observe variation in the number of households without sanitation in for the low income watersheds, but high income watersheds only exhibit smaller number of households without sanitation. This may be the reason why we observe an increase followed by a decrease of antidepressant concentration as we increase the number of households without sanitation in the watershed.
+
+```{r}
+plot(Preditoras_stand$Houses_without_sanitation~ Preditoras_stand$Average_Income)
+abline(v = median(Preditoras_stand$Average_Income), col = "red")
+```
+
+To better investigate this scenario we splitted our data set in watersheds below ("low" income) and above ("high income") the median of average income.
+
+ 
+
+ 
+
+## Splitting the data set into "low" and "high" income
+
+### "Low" income
+
+```{r, message=FALSE, warning=FALSE}
+pred_mod_sel_low_income <- pred_mod_sel[pred_mod_sel$Average_Income <= median(pred_mod_sel$Average_Income),]
+all <- responses$all[pred_mod_sel$Average_Income <= median(pred_mod_sel$Average_Income)]
+Preditoras_stand <- decostand(pred_mod_sel_low_income, method = "stand")
+
+
+##################################################################################################
+RFmodel <- randomForest(all ~ Houses_without_sanitation + Inhabitants,
+                        data = Preditoras_stand, proximity = TRUE, ntree = 100000,
+                        mtry = 3, importance = TRUE)
+RFmodel
+
+varImpPlot(RFmodel)
+
+partialPlot(RFmodel, Preditoras_stand, "Houses_without_sanitation")
+#partialPlot(RFmodel, Preditoras_stand, "Average_Income")
+partialPlot(RFmodel, Preditoras_stand, "Inhabitants")
+```
+
+For the low income data set the effect the effects seems similar to the whole data set, with a spike in antidepressant concentration for very low income watersheds followed by a decrease in concentration.
+
+ 
+
+ 
+
+### "High" income
+
+```{r, message=FALSE, warning=FALSE}
+pred_mod_sel_high_income <- pred_mod_sel[pred_mod_sel$Average_Income >= median(pred_mod_sel$Average_Income),]
+all <- responses$all[pred_mod_sel$Average_Income >= median(pred_mod_sel$Average_Income)]
+Preditoras_stand <- decostand(pred_mod_sel_high_income, method = "stand")
+
+
+##################################################################################################
+RFmodel <- randomForest(all ~ Houses_without_sanitation + Inhabitants,
+                        data = Preditoras_stand, proximity = TRUE, ntree = 100000,
+                        mtry = 3, importance = TRUE)
+RFmodel
+
+varImpPlot(RFmodel)
+
+partialPlot(RFmodel, Preditoras_stand, "Houses_without_sanitation")
+#partialPlot(RFmodel, Preditoras_stand, "Average_Income")
+partialPlot(RFmodel, Preditoras_stand, "Inhabitants")
+```
+
+For the high income data set both number of inhabitants and number of households without sanitation have positive effects on total antidepressant concentration.
+
+Apparently, the positive effect of the number of households without sanitation is only positive for the upper portion of average income.
