@@ -1,30 +1,13 @@
----
-title: "Spatial Analyses"
-author: "Rodolfo Pelinson"
-date: "2024-11-06"
-output: github_document
-editor_options: 
-  chunk_output_type: console
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+Spatial Analyses
+================
+Rodolfo Pelinson
+2024-11-06
 
 ## Plots of the spatial structure of predictors and response variables
 
-
-```{r,  echo= FALSE, eval = TRUE, warning=FALSE, message=FALSE}
-source("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/scripts/ajeitando_planilhas.R")
-library(glmmTMB)
-library(DHARMa)
-library(nlme)
-library(bbmle)
-library(MuMIn)
-```
-
 Functions necessary for the following plots:
-```{r}
+
+``` r
 plot_spatial_pattern <- function(y, main = ""){
   matrix <- matrix(data = c(0,.8,0,1,
                           .8,1,0,1), nrow = 2, ncol = 4, byrow = TRUE)
@@ -59,7 +42,7 @@ close.screen(all.screens = TRUE)
 }
 ```
 
-```{r}
+``` r
 colapsed_variogram <- function(variogram, dist_classes = 10){
   variogram <- variogram[order(variogram$dist),]
   new_seq <- seq(min(variogram$dist), max(variogram$dist), length.out = dist_classes)
@@ -73,37 +56,72 @@ colapsed_variogram <- function(variogram, dist_classes = 10){
 }
 ```
 
+This is just the spatial pattern of the most important predictor
+variables that we have.
 
-
-
-
-This is just the spatial pattern of the most important predictor variables that we have.
-```{r}
+``` r
 plot_spatial_pattern(predictors$casas_sem_saneamento, main = "Houses without sanitation")
+```
+
+![](spatial_analyses_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+
+``` r
 plot_spatial_pattern(predictors$habitantes, main = "Inhanitants")
+```
+
+![](spatial_analyses_files/figure-gfm/unnamed-chunk-4-2.png)<!-- -->
+
+``` r
 plot_spatial_pattern(predictors$renda, main = "Per capta average income")
 ```
 
-As we can see, these variables do have some opposite spatial patterns. Specifically, the total number of houses without sanitation and total number of inhabitants exhibit opposite patterns to the per capta average income.
+![](spatial_analyses_files/figure-gfm/unnamed-chunk-4-3.png)<!-- -->
 
+As we can see, these variables do have some opposite spatial patterns.
+Specifically, the total number of houses without sanitation and total
+number of inhabitants exhibit opposite patterns to the per capta average
+income.
 
-```{r}
+``` r
 plot_spatial_pattern(responses$all, main = "Antidepressant concentration")
+```
+
+![](spatial_analyses_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+
+``` r
 plot_spatial_pattern(responses$SNRI, main = "SNRI Antidepressant concentration")
+```
+
+![](spatial_analyses_files/figure-gfm/unnamed-chunk-5-2.png)<!-- -->
+
+``` r
 plot_spatial_pattern(responses$Aminoketone, main = "Aminoketone Antidepressant concentration")
+```
+
+![](spatial_analyses_files/figure-gfm/unnamed-chunk-5-3.png)<!-- -->
+
+``` r
 plot_spatial_pattern(responses$SSRI, main = "SSRI Antidepressant concentration")
+```
+
+![](spatial_analyses_files/figure-gfm/unnamed-chunk-5-4.png)<!-- -->
+
+``` r
 plot_spatial_pattern(responses$Tricyclic, main = "Tricyclic Antidepressant concentration")
 ```
 
-These are the spatial patterns found for antidepressant concentration. It seems that the ones with high concentration are concentrated in the center of the distribution.
+![](spatial_analyses_files/figure-gfm/unnamed-chunk-5-5.png)<!-- -->
 
+These are the spatial patterns found for antidepressant concentration.
+It seems that the ones with high concentration are concentrated in the
+center of the distribution.
 
 ## Analysis for the total concentration of antidepressants
 
-First lets find the best model to predict the total concentration of antidepressants
+First lets find the best model to predict the total concentration of
+antidepressants
 
-```{r}
-
+``` r
 #pred_mod_sel <- select(predictors, area, casas_sem_saneamento, renda, habitantes)
 pred_mod_sel <- select(predictors,  casas_sem_saneamento, renda, habitantes)
 
@@ -148,7 +166,11 @@ mod_global_all <- glmmTMB(all ~
 #fazendo todas as combinações possíveis
 
 dredge_modelos_all <- MuMIn::dredge(mod_global_all, subset = smat)
+```
 
+    ## Fixed terms are "cond((Int))" and "disp((Int))"
+
+``` r
 models <- get.models(dredge_modelos_all, subset = delta < 2)
 
 best_model <- models[[1]]
@@ -156,9 +178,31 @@ best_model <- models[[1]]
 best_model
 ```
 
-With the best model found, we will check for spatial patterns in a model without predictors, in our best model, and in our best model with the addition of spatial autocorrelation.
+    ## Formula:          
+    ## all ~ casas_sem_saneamento + renda + casas_sem_saneamento:renda +      1
+    ## Data: Preditoras_stand
+    ##       AIC       BIC    logLik  df.resid 
+    ##  547.2504  558.8413 -267.6252        45 
+    ## 
+    ## Number of obs: 51
+    ## 
+    ## Dispersion parameter for tweedie family (): 27.4 
+    ## 
+    ## Tweedie power estimate:  1.4 
+    ## 
+    ## Fixed Effects:
+    ## 
+    ## Conditional model:
+    ##                (Intercept)        casas_sem_saneamento  
+    ##                     5.8056                      0.9669  
+    ##                      renda  casas_sem_saneamento:renda  
+    ##                     0.7120                      2.0802
 
-```{r}
+With the best model found, we will check for spatial patterns in a model
+without predictors, in our best model, and in our best model with the
+addition of spatial autocorrelation.
+
+``` r
 set.seed(45)
 library(DHARMa)
 library(nlme)
@@ -174,14 +218,41 @@ resid_all <- simulateResiduals(best_model, n = 10000, rotation = "estimated")
 resid_auto_correlation <- simulateResiduals(mod_auto_correlation, n = 10000, rotation = "estimated")
 
 plot(resid_no_effect)
+```
+
+![](spatial_analyses_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+``` r
 plot(resid_all)
+```
+
+![](spatial_analyses_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
+
+``` r
 plot(resid_auto_correlation)
+```
 
+![](spatial_analyses_files/figure-gfm/unnamed-chunk-7-3.png)<!-- -->
+
+``` r
 plot_spatial_pattern(resid_no_effect$scaledResiduals, main = "DHARMa residuals with no prectors")
+```
+
+![](spatial_analyses_files/figure-gfm/unnamed-chunk-7-4.png)<!-- -->
+
+``` r
 plot_spatial_pattern(resid_all$scaledResiduals, main = "DHARMa residuals for the best model")
+```
+
+![](spatial_analyses_files/figure-gfm/unnamed-chunk-7-5.png)<!-- -->
+
+``` r
 plot_spatial_pattern(resid_auto_correlation$scaledResiduals, main = "DHARMa residuals modeling spatial autocorrelation")
+```
 
+![](spatial_analyses_files/figure-gfm/unnamed-chunk-7-6.png)<!-- -->
 
+``` r
 var_no_effect <- Variogram(resid_no_effect$scaledResiduals, distance = dist(coord[,2:3]))
 var_no_effect_colapsed <- colapsed_variogram(var_no_effect)
 
@@ -192,10 +263,40 @@ var_auto_cor <- Variogram(resid_auto_correlation$scaledResiduals, distance = dis
 var_auto_cor_colapsed <- colapsed_variogram(var_auto_cor)
 
 plot(var_no_effect_colapsed)
-plot(var_colapsed)
-plot(var_auto_cor_colapsed)
-
 ```
 
+![](spatial_analyses_files/figure-gfm/unnamed-chunk-7-7.png)<!-- -->
+
+``` r
+plot(var_colapsed)
+```
+
+![](spatial_analyses_files/figure-gfm/unnamed-chunk-7-8.png)<!-- -->
+
+``` r
+plot(var_auto_cor_colapsed)
+```
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric = FALSE, :
+    ## pseudoinverse used at 0.75633
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric = FALSE, :
+    ## neighborhood radius 0.25139
+
+    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric = FALSE, :
+    ## reciprocal condition number 0
+
+![](spatial_analyses_files/figure-gfm/unnamed-chunk-7-9.png)<!-- -->
+
 ## Conclusion
-As we can see, our model do eliminate most of the spatial patterns observed in our response variable. When we look at the Semivariograms we can see that our best model is sufficient to elimate a pattern of increase in semivariance with distance. In fact, we are left with a pattern of decrease in semivariance for samples that are very far apart. Meaning that samples far apart are more similar that samples close to each other. The probable explanation for that is that forested watersheds mostly occur at the margins of our sample design. Unfortunately this is could be accounted for the available spatial aucorrelation structures.
+
+As we can see, our model do eliminate most of the spatial patterns
+observed in our response variable. When we look at the Semivariograms we
+can see that our best model is sufficient to elimate a pattern of
+increase in semivariance with distance. In fact, we are left with a
+pattern of decrease in semivariance for samples that are very far apart.
+Meaning that samples far apart are more similar that samples close to
+each other. The probable explanation for that is that forested
+watersheds mostly occur at the margins of our sample design.
+Unfortunately this is could be accounted for the available spatial
+aucorrelation structures.
