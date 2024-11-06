@@ -21,6 +21,8 @@ cors <- cor(predictors_cor, use = "pairwise.complete.obs")
 cors2 <- cor.mtest(predictors_cor, use = "pairwise.complete.obs")
 
 plot(predictors$habitantes ~ predictors$habitantes_sem_saneamento)
+plot(predictors$habitantes ~ predictors$casas_sem_saneamento)
+
 #Pedindo para mostrar, em outra planilha, só as variaveis com correlação maior que 0.5 ou -0.5
 cors0 <- cors
 cors0[which(cors < 0.5 & cors > -0.5)] <- 0 
@@ -85,6 +87,156 @@ mod_global_all <- glmmTMB(all ~
                           data = Preditoras_stand, family = tweedie(link = "log"), na.action = "na.fail")
 
 
+#fazendo todas as combinações possíveis
+
+dredge_modelos_all <- MuMIn::dredge(mod_global_all, subset = smat)
+
+models <- get.models(dredge_modelos_all, subset = delta < 2)
+
+best_model <- models[[1]]
+
+##################################################################################################
+############# Checking for spatial autocorrelation
+
+library(DHARMa)
+resid_all <- simulateResiduals(best_model, n = 10000, rotation = "estimated")
+plot(resid_all)
+testSpatialAutocorrelation(resid_all, y = coord$latitude, x = coord$longitude)
+#Spatial autocorrelation NOT detected
+library(nlme)
+
+mod_no_effect <- glmmTMB(all ~ 1,data = Preditoras_stand, family = tweedie(link = "log"), na.action = "na.fail")
+resid_no_effect <- simulateResiduals(mod_no_effect, n = 10000, rotation = "estimated")
+var_no_effect <- Variogram(resid_no_effect$scaledResiduals, distance = dist(coord[,2:3]))
+plot(var_no_effect)
+
+#Colapse variogram for 10 classes of observations
+var_no_effect <- var_no_effect[order(var_no_effect$dist),]
+new_seq <- seq(min(var_no_effect$dist), max(var_no_effect$dist), length.out = 10)
+new_var_no_effect <- rep(NA, length(new_seq)-1)
+for(i in 1:(length(new_seq) - 1)){
+  new_var_no_effect[i] <- mean(var_no_effect$variog[var_no_effect$dist >= new_seq[i] & var_no_effect$dist < new_seq[i+1]])
+}
+new_variogram_no_effect <- data.frame(variog = new_var_no_effect, dist = new_seq[-length(new_seq)])
+class(new_variogram_no_effect) <- class(var_no_effect)
+plot(new_variogram_no_effect)
+####################################################
+
+
+
+var <- Variogram(resid_all$scaledResiduals, distance = dist(coord[,2:3]))
+plot(var)
+#Colapse variogram for 10 classes of observations
+var <- var[order(var$dist),]
+new_seq <- seq(min(var$dist), max(var$dist), length.out = 10)
+new_var <- rep(NA, length(new_seq)-1)
+for(i in 1:(length(new_seq) - 1)){
+  new_var[i] <- mean(var$variog[var$dist >= new_seq[i] & var$dist < new_seq[i+1]])
+}
+new_variogram <- data.frame(variog = new_var, dist = new_seq[-length(new_seq)])
+class(new_variogram) <- class(var)
+plot(new_variogram)
+####################################################
+
+
+Preditoras_stand$pos <- numFactor(coord$longitude, coord$latitude)
+Preditoras_stand$group <- rep("A", nrow(Preditoras_stand))
+
+#Modelol global
+mod_auto_cor <- glmmTMB(all ~ 
+                            casas_sem_saneamento +
+                            renda + 
+                            casas_sem_saneamento:renda+
+                          exp(pos + 0|group),
+                          data = Preditoras_stand, family = tweedie(link = "log"), na.action = "na.fail")
+
+
+resid_all_auto_cor <- simulateResiduals(mod_auto_cor, rotation = "estimated", n = 10000)
+testSpatialAutocorrelation(resid_all_auto_cor, y = coord$latitude, x = coord$longitude)
+var_auto_cor <- Variogram(resid_all_auto_cor$scaledResiduals, distance = dist(coord[,2:3]))
+plot(var_auto_cor)
+
+#Colapse variogram for 10 classes of observations
+var_auto_cor <- var_auto_cor[order(var_auto_cor$dist),]
+new_seq <- seq(min(var_auto_cor$dist), max(var_auto_cor$dist), length.out = 10)
+new_var_auto_cor <- rep(NA, length(new_seq)-1)
+for(i in 1:(length(new_seq) - 1)){
+  new_var_auto_cor[i] <- mean(var_auto_cor$variog[var_auto_cor$dist >= new_seq[i] & var_auto_cor$dist < new_seq[i+1]])
+}
+new_variogram <- data.frame(variog = new_var_auto_cor, dist = new_seq[-length(new_seq)])
+class(new_variogram) <- class(var_auto_cor)
+plot(new_variogram)
+#Ok
+
+
+##################################################################################################
+best_model_casas <- models[[1]]
+
+mod_best <- glmmTMB(all ~   casas_sem_saneamento +
+                            renda + 
+                            casas_sem_saneamento:renda,
+                          data = Preditoras_stand, family = tweedie(link = "log"), na.action = "na.fail")
+
+rescale <- function(x, scale, center){
+  (x * scale) + center
+}
+
+names_v <- names(attr(Preditoras_stand, "parameters")$scale)
+
+scale_casas <- attr(Preditoras_stand, "parameters")$scale[names_v == "casas_sem_saneamento"]
+center_casas <- attr(Preditoras_stand, "parameters")$center[names_v == "casas_sem_saneamento"]
+
+scale_renda <- attr(Preditoras_stand, "parameters")$scale[names_v == "renda"]
+center_renda <- attr(Preditoras_stand, "parameters")$center[names_v == "renda"]
+
+
+##################################################################################################
+############# Checking for spatial autocorrelation
+
+library(DHARMa)
+library(glmmTMB)
+
+resid_all <- simulateResiduals(mod_best)
+plot(resid_all)
+testSpatialAutocorrelation(resid_all, y = coord$latitude, x = coord$longitude)
+
+
+
+Preditoras_stand$pos <- numFactor(coord$longitude, coord$latitude)
+Preditoras_stand$group <- rep("A", nrow(Preditoras_stand))
+
+mod_best_auto_cor <- glmmTMB(all ~   casas_sem_saneamento * renda + exp(pos + 0|group),
+                             data = Preditoras_stand, family = tweedie(link = "log"))
+
+resid_all_auto_cor <- simulateResiduals(mod_best_auto_cor, rotation = "estimated", n = 10000)
+testSpatialAutocorrelation(resid_all_auto_cor, y = coord$latitude, x = coord$longitude)
+
+##################################################################################################
+
+
+
+###############################################
+###############################################
+####### TODOS OS ANTIDEPRESSIVOS ##############
+
+Preditoras_stand$all <- responses$all
+
+#Modelol global
+mod_global_all <- glmmTMB(all ~ 
+                            #area +
+                            casas_sem_saneamento +
+                            habitantes +
+                            renda + 
+                            casas_sem_saneamento:renda+
+                            #casas_sem_saneamento:renda:area+
+                            habitantes:renda,
+                          #habitantes:renda:area+
+                          #casas_sem_saneamento:area+
+                          #habitantes:area+
+                          #renda:area,
+                          data = Preditoras_stand, family = tweedie(link = "log"), na.action = "na.fail")
+
+
 
 Anova(mod_global_all)
 
@@ -101,32 +253,19 @@ write.table(data.frame(as.matrix(dredge_modelos_all)), "Resultados/model_selecti
 
 
 
-##################################################################################################
-best_model_casas <- models$`14`
-
-mod_best <- glmmTMB(all ~   casas_sem_saneamento +
-                            renda + 
-                            casas_sem_saneamento:renda,
-                          data = Preditoras_stand, family = tweedie(link = "log"), na.action = "na.fail")
-
-mod_best2 <- glmmTMB(all ~   casas_sem_saneamento *renda,
-                    data = Preditoras_stand, family = tweedie(link = "log"), na.action = "na.fail")
-
-rescale <- function(x, scale, center){
-  (x * scale) + center
-}
-
-names_v <- names(attr(Preditoras_stand, "parameters")$scale)
-
-scale_casas <- attr(Preditoras_stand, "parameters")$scale[names_v == "casas_sem_saneamento"]
-center_casas <- attr(Preditoras_stand, "parameters")$center[names_v == "casas_sem_saneamento"]
-
-scale_renda <- attr(Preditoras_stand, "parameters")$scale[names_v == "renda"]
-center_renda <- attr(Preditoras_stand, "parameters")$center[names_v == "renda"]
 
 
-##################################################################################################
 
+
+
+
+
+
+
+
+
+
+#################################################################################################
 
 
 quantile10 <- quantile(Preditoras_stand$renda, probs = 0.1)

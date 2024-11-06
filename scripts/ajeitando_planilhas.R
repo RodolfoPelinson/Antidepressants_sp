@@ -8,6 +8,8 @@ library(dplyr)
 data_agua <- read.csv("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/data/water_quality_R_ultima_versao.csv")
 data_topografia <- read.csv("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/data/dados_topografia.csv")
 data_saneamento <- read.csv("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/data/consolidacao_dados_socioeconomicos_20240624.csv")
+data_coord <- read.csv("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/data/coordinates.csv")
+
 
 data_agua <- data_agua[data_agua$Survey == "seca 2021" | data_agua$Survey == "Survey" | data_agua$Survey == "class",]
 
@@ -141,3 +143,20 @@ diff_watersheds_5_AGSB <- data_saneamento$ID_geral[data_saneamento$incremento_20
 
 
 
+##########################################
+coord <- data_coord[,1:3]
+
+nrow(coord)
+nrow(predictors)
+
+
+pos <- match(rownames(predictors),coord$bacia)
+
+faltando <- which(is.na(pos))
+rownames(predictors)[faltando]
+
+coord$bacia[pos]
+
+coord <- coord[pos,]
+
+nrow(coord)

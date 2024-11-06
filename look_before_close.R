@@ -25,11 +25,11 @@ install.packages("emmeans")
 install.packages("car")
 install.packages("DHARMa")
 install.packages("bbmle")
-install.packages("TMB")
-install.packages("Matrix")
+install.packages("Matrix", type = "source")
+install.packages("TMB", type = "source")
+install.packages("sdmTMB", type = "source")
 install.packages("randomForest")
 install.packages("mgcv")
-
 
 
 #install.packages("spaa")

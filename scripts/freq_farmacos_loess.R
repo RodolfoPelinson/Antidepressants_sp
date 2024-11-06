@@ -1,0 +1,333 @@
+data_farmacos <- read.csv("Data/antidepressivos_r.csv")
+data_farmacos <- data_farmacos[,which(colnames(data_farmacos)!="Norfluoxetina")]
+data_general <- read.csv("Data/planilha_master_r.csv")
+
+data_farmacos_reference <- data_farmacos[1,]
+data_farmacos_class <- data_farmacos[2,]
+data_farmacos <- data_farmacos[-c(1,2),]
+
+data_farmacos$urb <- data_general$urb[match(data_farmacos$bacia,data_general$microbacia)]
+
+data.frame(data_farmacos$bacia, data_farmacos$urb, data_farmacos$Decil)
+
+data_farmacos$urb[data_farmacos$bacia == "ebb08" | 
+                    data_farmacos$bacia == "ebb09" |
+                    data_farmacos$bacia == "ebb11" |
+                    data_farmacos$bacia == "ebb12"] <- 0 
+
+
+data_farmacos$urb[is.na(data_farmacos$urb)] <- data_farmacos$Decil[is.na(data_farmacos$urb)] + 5
+
+data.frame(data_farmacos$bacia, data_farmacos$urb, data_farmacos$Decil)
+
+
+urb <- data_farmacos$urb
+Decil <- data_farmacos$Decil
+bacia <- data_farmacos$bacia
+
+data_farmacos <- data_farmacos[,-c(1,2,ncol(data_farmacos))]
+data_farmacos_reference <- data_farmacos_reference[,-c(1,2)]
+
+data_farmacos <- data.frame(lapply(data_farmacos,as.numeric))
+
+data_farmacos <- data_farmacos[,colSums(data_farmacos) > 0]
+
+data_farmacos <- data_farmacos[,order(colSums(data_farmacos), decreasing = TRUE)]
+
+library(vegan)
+
+data_farmacos_pa <- decostand(data_farmacos, method = "pa")
+
+freq <- function(x){
+  freq <- sum(x)/length(x)
+  return(freq)
+}
+
+frequencies <- list()
+
+for(i in 1:ncol(data_farmacos_pa)){
+  frequencies[[i]] <- tapply(data_farmacos_pa[,i], INDEX = Decil, freq)
+  names(frequencies)[i] <- colnames(data_farmacos_pa)[i]
+}
+
+frequencies <- lapply(frequencies, as.numeric)
+
+Decil_unique <- unique(Decil)
+
+
+span <- 1
+weights <- c(100,rep(1,10))
+degree <- 2
+
+
+Sertraline_model <- loess_func(frequencies$Sertraline, x =Decil_unique,  span = span, weights = weights, degree = degree) 
+O.desmethylvenlafaxine_model <- loess_func(frequencies$O.desmethylvenlafaxine, x =Decil_unique, span = span, weights = weights, degree = degree)
+Hydroxybupropion_model <- loess_func(frequencies$Hydroxybupropion, x =Decil_unique,  span = span, weights = weights, degree = degree)
+Bupropion_model <- loess_func(frequencies$Bupropion, x =Decil_unique,  span = span, weights = weights, degree = degree)
+Venlafaxine_model <- loess_func(frequencies$Venlafaxine, x =Decil_unique,  span = span, weights = weights, degree = degree)
+Desmethylcitalopram_model <- loess_func(frequencies$Desmethylcitalopram, x =Decil_unique,  span = span, weights = weights, degree = degree)
+Citalopram_model <- loess_func(frequencies$Citalopram, x =Decil_unique,  span = span, weights = weights, degree = degree)
+Fluoxetine_model <- loess_func(frequencies$Fluoxetine, x =Decil_unique,  span = span, weights = weights, degree = degree)
+Amitriptyline_model <- loess_func(frequencies$Amitriptyline, x =Decil_unique,  span = span, weights = weights, degree = degree)
+Trimipramine_model <- loess_func(frequencies$Trimipramine, x =Decil_unique,  span = span, weights = weights, degree = degree)
+
+
+############### Sertraline ###############
+
+Sertraline_plot <- function(){
+  plot(frequencies$Sertraline ~ Decil_unique , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", ylim = c(0,1))
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "Frequency of", line = 2, cex.lab = ylab.cex)
+  title(ylab = "sertraline", line = 1.25, cex.lab = ylab.cex)
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  lines(c(0:100), Sertraline_model, lty = 1, lwd  = line_lwd)
+  points(x = Decil_unique, y = frequencies$Sertraline, pch = 16, cex = cex.points)
+  box()
+}
+
+
+
+############### O.desmethylvenlafaxine ###############
+
+O.desmethylvenlafaxine_plot <- function(){
+  plot(frequencies$O.desmethylvenlafaxine ~ Decil_unique , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", ylim = c(0,1))
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "Frequency of", line = 2, cex.lab = ylab.cex)
+  title(ylab = "O-desmethylvenlafaxine", line = 1.25, cex.lab = ylab.cex)
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  lines(c(0:100), O.desmethylvenlafaxine_model, lty = 1, lwd  = line_lwd)
+  points(x = Decil_unique, y = frequencies$O.desmethylvenlafaxine, pch = 16, cex = cex.points)
+  box()
+}
+
+
+############### Hydroxybupropion ###############
+
+Hydroxybupropion_plot <- function(){
+  plot(frequencies$Hydroxybupropion ~ Decil_unique , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", ylim = c(0,1))
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "Frequency of", line = 2, cex.lab = ylab.cex)
+  title(ylab = "Hydroxybupropion", line = 1.25, cex.lab = ylab.cex)
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  lines(c(0:100), Hydroxybupropion_model, lty = 1, lwd  = line_lwd)
+  points(x = Decil_unique, y = frequencies$Hydroxybupropion, pch = 16, cex = cex.points)
+  box()
+}
+
+
+
+
+############### Bupropion ###############
+
+Bupropion_plot <- function(){
+  plot(frequencies$Bupropion ~ Decil_unique , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", ylim = c(0,1))
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "Frequency of", line = 2, cex.lab = ylab.cex)
+  title(ylab = "Bupropion", line = 1.25, cex.lab = ylab.cex)
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  lines(c(0:100), Bupropion_model, lty = 1, lwd  = line_lwd)
+  points(x = Decil_unique, y = frequencies$Bupropion, pch = 16, cex = cex.points)
+  box()
+}
+
+
+
+############### Venlafaxine ###############
+
+Venlafaxine_plot <- function(){
+  plot(frequencies$Venlafaxine ~ Decil_unique , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", ylim = c(0,1))
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "Frequency of", line = 2, cex.lab = ylab.cex)
+  title(ylab = "Venlafaxine", line = 1.25, cex.lab = ylab.cex)
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  lines(c(0:100), Venlafaxine_model, lty = 1, lwd  = line_lwd)
+  points(x = Decil_unique, y = frequencies$Venlafaxine, pch = 16, cex = cex.points)
+  box()
+}
+
+
+
+
+############### Desmethylcitalopram ###############
+
+Desmethylcitalopram_plot <- function(){
+  plot(frequencies$Desmethylcitalopram ~ Decil_unique , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", ylim = c(0,1))
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "Frequency of", line = 2, cex.lab = ylab.cex)
+  title(ylab = "Desmethylcitalopram", line = 1.25, cex.lab = ylab.cex)
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  lines(c(0:100), Desmethylcitalopram_model, lty = 1, lwd  = line_lwd)
+  points(x = Decil_unique, y = frequencies$Desmethylcitalopram, pch = 16, cex = cex.points)
+  box()
+}
+
+
+
+
+############### Citalopram ###############
+
+Citalopram_plot <- function(){
+  plot(frequencies$Citalopram ~ Decil_unique , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", ylim = c(0,1))
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "Frequency of", line = 2, cex.lab = ylab.cex)
+  title(ylab = "Citalopram", line = 1.25, cex.lab = ylab.cex)
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  lines(c(0:100), Citalopram_model, lty = 1, lwd  = line_lwd)
+  points(x = Decil_unique, y = frequencies$Citalopram, pch = 16, cex = cex.points)
+  box()
+}
+
+
+
+############### Norfluoxetina ###############
+
+#Norfluoxetina_model <- loess_func(frequencies$Norfluoxetina, x =Decil_unique,  span = span)
+
+#Norfluoxetina_plot <- function(){
+#  plot(frequencies$Norfluoxetina ~ Decil_unique , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", ylim = c(0,1))
+#  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+#  title(ylab = "Frequency of", line = 2, cex.lab = ylab.cex)
+#  title(ylab = "Norfluoxetine", line = 1.25, cex.lab = ylab.cex)
+#  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+#  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+#  lines(c(0:100), Norfluoxetina_model, lty = 1, lwd  = line_lwd)
+#  points(x = Decil_unique, y = frequencies$Norfluoxetina, pch = 16, cex = cex.points)
+#  box()
+#}
+
+
+
+############### Fluoxetine ###############
+
+Fluoxetine_plot <- function(){
+  plot(frequencies$Fluoxetine ~ Decil_unique , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", ylim = c(0,1))
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "Frequency of", line = 2, cex.lab = ylab.cex)
+  title(ylab = "Fluoxetine", line = 1.25, cex.lab = ylab.cex)
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  lines(c(0:100), Fluoxetine_model, lty = 1, lwd  = line_lwd)
+  points(x = Decil_unique, y = frequencies$Fluoxetine, pch = 16, cex = cex.points)
+  box()
+}
+
+
+
+############### Amitriptyline ###############
+
+Amitriptyline_plot <- function(){
+  plot(frequencies$Amitriptyline ~ Decil_unique , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", ylim = c(0,1))
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "Frequency of", line = 2, cex.lab = ylab.cex)
+  title(ylab = "Amitriptyline", line = 1.25, cex.lab = ylab.cex)
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  lines(c(0:100), Amitriptyline_model, lty = 1, lwd  = line_lwd)
+  points(x = Decil_unique, y = frequencies$Amitriptyline, pch = 16, cex = cex.points)
+  box()
+}
+
+
+
+############### Trimipramine ###############
+
+Trimipramine_plot <- function(){
+  plot(frequencies$Trimipramine ~ Decil_unique , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", ylim = c(0,1))
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "Frequency of", line = 2, cex.lab = ylab.cex)
+  title(ylab = "Trimipramine", line = 1.25, cex.lab = ylab.cex)
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  lines(c(0:100), Trimipramine_model, lty = 1, lwd  = line_lwd)
+  points(x = Decil_unique, y = frequencies$Trimipramine, pch = 16, cex = cex.points)
+  box()
+}
+
+
+
+pdf("Resultados/Resultados Antidepressivos/Figuras/PDF/Antidepressivos_loess_frequency_degree_2_smooth_1.pdf", width = 6, height = 6)
+par(mfrow = c(4,3), mar = c(3.5,3.5,0.5,0.5))
+
+O.desmethylvenlafaxine_plot()
+Desmethylcitalopram_plot()
+Hydroxybupropion_plot()
+Amitriptyline_plot()
+Sertraline_plot()
+Venlafaxine_plot()
+Fluoxetine_plot()
+Citalopram_plot()
+Bupropion_plot()
+Trimipramine_plot()
+#Norfluoxetina_plot()
+
+dev.off()
+
+
+
+lines <- list(O.desmethylvenlafaxine_model,
+              Desmethylcitalopram_model,
+              Hydroxybupropion_model,
+              Amitriptyline_model,
+              Sertraline_model,
+              Venlafaxine_model,
+              Fluoxetine_model,
+              Citalopram_model,
+              Bupropion_model,
+              Trimipramine_model)
+              #Norfluoxetina_model)
+
+library(colorspace)
+library(shape)
+
+
+plot_loess <- function(letter = "", x_letter = 0, y_letter = 100){
+  
+  length(lines)
+  Cols <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+  Cols <- c(rep(c("#F0E442", "#D55E00", "#56B4E9", "#009E73", "#CC79A7"),2))
+  bg <- c(rep("black", 5),rep("white", 5))
+  names <- names(frequencies)
+  
+  
+#  par(mar = c(7,3.5,2,0.5))
+  
+  plot(NA , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", ylim = c(0,1), xlim = c(0,100))
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "Frequency of API", line = line_labs, cex.lab = ylab.cex)
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = -0.02); axis(1, tick = FALSE, cex.axis = 0.8, line = -0.7, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = -0.02); axis(2, tick = FALSE, cex.axis = 0.8, line = -0.7, gap.axis = -10)
+  
+  
+  for(i in 1:length(lines)){
+    lines(c(0:100), lines[[i]], lty = 1, lwd  = 3.5, col = bg[i])
+    lines(c(0:100), lines[[i]], lty = 1, lwd  = 2, col = Cols[i])
+  }
+  box()
+  
+  #plot(NA , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", bty = "n", xlim = c(0,100), ylim = c(0,100))
+ 
+  
+  par(new=TRUE, mar = c(0,0,0,0)) 
+  plot(NA, type = "n", xlim = c(0,100), xaxt = "n", yaxt = "n", xlab = "", ylab = "", axes = F, ylim = c(0,100))
+  
+  legend(x = 2.5, y = 15,
+         legend = names, bty = "n", col = bg, cex = 0.9, ncol = 3, lty = 1, lwd = 3.5, text.width	= c(32.5, 17.5))
+  
+  legend(x = 2.5, y = 15,
+         legend = names, bty = "n", col = Cols, cex = 0.9, ncol = 3, lty = 1, lwd = 2, text.width	= c(32.5, 17.5))
+  
+  text(x = x_letter, y = y_letter, labels = letter, font = 2, cex = 1.5, adj = 0)
+  par(mar = margins)
+  
+}
+
+
+
+

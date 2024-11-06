@@ -1,5 +1,5 @@
 ---
-title: "RandomForest_aproach"
+title: "Random Forest Aproach"
 author: "Rodolfo Pelinson"
 date: "2024-11-04"
 output: github_document
@@ -14,8 +14,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r,  echo= FALSE, eval = TRUE, warning=FALSE, message=FALSE}
 source("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/scripts/ajeitando_planilhas.R")
 ```
-
-# Random Forests Approach
 
 ```{r, echo= FALSE, eval = TRUE, warning=FALSE, message=FALSE}
 library(vegan)
@@ -55,7 +53,7 @@ RFmodel
 varImpPlot(RFmodel)
 ```
 
-These are measures of variable importance. Both measures agree that the number of houses without sanitation and the number of inhabitants in the watershed are important variables, followed by average income, which is also exhibits good values of importance.
+These are measures of variable importance. Both measures agree that the number of houses without sanitation and the number of inhabitants in the watershed are important variables, followed by average income, which also exhibits good values of importance.
 
 ```{r}
 partialPlot(RFmodel, Preditoras_stand, "Inhabitants")
