@@ -44,11 +44,11 @@ n_pharma_model$AICTAB
 ```
 
     ##            dAICc       df
-    ## gam_2  0.0000000 5.604237
-    ## gam_3  0.1562578 5.957983
-    ## gam_4  0.1933805 5.981800
-    ## gam_1  1.5941345 3.983236
-    ## gam_0 28.1880112 2.000000
+    ## gam_3  0.0000000 6.355794
+    ## gam_4  0.0713828 6.374698
+    ## gam_2  0.1507220 5.783106
+    ## gam_1  2.6125473 3.984888
+    ## gam_0 30.2740158 2.000000
 
 ``` r
 SNRI_model <- select_gam(y = data_farmacos_conc$SNRI, x = data_farmacos_conc$urb, family = "nb", drop.intercept = FALSE)
@@ -63,11 +63,11 @@ SNRI_model$AICTAB
 ```
 
     ##            dAICc       df
-    ## gam_1  0.0000000 3.942023
-    ## gam_2  0.6980317 4.379303
-    ## gam_3  0.7707550 4.409168
-    ## gam_4  0.7744289 4.413057
-    ## gam_0 10.6438469 2.000000
+    ## gam_1  0.0000000 3.946905
+    ## gam_2  0.5254734 4.475783
+    ## gam_3  0.5828330 4.517574
+    ## gam_4  0.5893848 4.520094
+    ## gam_0 11.1462331 2.000000
 
 ``` r
 SSRI_model <- select_gam(y = data_farmacos_conc$SSRI, x = data_farmacos_conc$urb, family = "nb")
@@ -82,11 +82,11 @@ SSRI_model$AICTAB
 ```
 
     ##            dAICc       df
-    ## gam_1  0.0000000 3.844015
-    ## gam_2  0.6446915 3.959961
-    ## gam_3  0.6675287 3.971864
-    ## gam_4  0.6697425 3.973579
-    ## gam_0 24.5683274 2.000000
+    ## gam_1  0.0000000 3.849178
+    ## gam_2  0.6425649 3.985824
+    ## gam_3  0.6636154 3.996919
+    ## gam_4  0.6657463 3.998135
+    ## gam_0 24.8557827 2.000000
 
 ``` r
 Tricyclic_model <- select_gam(y = data_farmacos_conc$Tricyclic, x = data_farmacos_conc$urb, family = "nb", drop.intercept = FALSE)
@@ -101,11 +101,11 @@ Tricyclic_model$AICTAB
 ```
 
     ##           dAICc       df
-    ## gam_1 0.0000000 3.894301
-    ## gam_2 0.9107806 4.073208
-    ## gam_3 0.9665015 4.078730
-    ## gam_4 0.9711686 4.078339
-    ## gam_0 5.9000735 2.000000
+    ## gam_1 0.0000000 3.897042
+    ## gam_2 0.9073586 4.086473
+    ## gam_3 0.9614528 4.090324
+    ## gam_4 0.9657331 4.089798
+    ## gam_0 5.9990059 2.000000
 
 ``` r
 Aminoketone_model <- select_gam(y = data_farmacos_conc$Aminoketone, x = data_farmacos_conc$urb, family = "nb")
@@ -120,11 +120,11 @@ Aminoketone_model$AICTAB
 ```
 
     ##           dAICc       df
-    ## gam_1 0.0000000 3.760469
-    ## gam_3 0.1787624 3.388154
-    ## gam_4 0.1808805 3.391883
-    ## gam_2 0.1848609 3.407386
-    ## gam_0 1.7724849 2.000000
+    ## gam_1 0.0000000 3.789017
+    ## gam_3 0.3178065 3.537721
+    ## gam_4 0.3186697 3.538940
+    ## gam_2 0.3187493 3.554922
+    ## gam_0 2.0776061 2.000000
 
 Our models generally fitted well within the chosen statistical
 distribution. Residuals generally exhibited somewhat lower values for

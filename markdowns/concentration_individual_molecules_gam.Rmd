@@ -27,10 +27,10 @@ data_farmacos$urb <- data_general$urb[match(data_farmacos$bacia,data_general$mic
 
 data.frame(data_farmacos$bacia, data_farmacos$urb, data_farmacos$Decil)
 
-data_farmacos$urb[data_farmacos$bacia == "ebb08" | 
-                    data_farmacos$bacia == "ebb09" |
-                    data_farmacos$bacia == "ebb11" |
-                    data_farmacos$bacia == "ebb12"] <- 0 
+data_farmacos$urb[data_farmacos$bacia == "ebb008" | 
+                    data_farmacos$bacia == "ebb009" |
+                    data_farmacos$bacia == "ebb011" |
+                    data_farmacos$bacia == "ebb012"] <- 0 
 
 data_farmacos$urb[is.na(data_farmacos$urb)] <- data_farmacos$Decil[is.na(data_farmacos$urb)] + 5
 

@@ -23,13 +23,13 @@ mod_tw <- glmmTMB(ng_L~kg, family = "tweedie", data = data_IQVIA_vs_encontrados)
 plot(simulateResiduals(mod_gaus))
 ```
 
-![](Sales_contamination_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+<img src="Sales_contamination_files/figure-gfm/unnamed-chunk-3-1.png" style="display: block; margin: auto;" />
 
 ``` r
 plot(simulateResiduals(mod_tw))
 ```
 
-![](Sales_contamination_files/figure-gfm/unnamed-chunk-3-2.png)<!-- -->
+<img src="Sales_contamination_files/figure-gfm/unnamed-chunk-3-2.png" style="display: block; margin: auto;" />
 
 ``` r
 AICc(mod_gaus)
@@ -68,13 +68,13 @@ mod_beta <- glmmTMB(frequencia~kg, family = ordbeta(link = "probit"), data = dat
 plot(simulateResiduals(mod_gaus))
 ```
 
-![](Sales_contamination_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+<img src="Sales_contamination_files/figure-gfm/unnamed-chunk-5-1.png" style="display: block; margin: auto;" />
 
 ``` r
 plot(simulateResiduals(mod_beta))
 ```
 
-![](Sales_contamination_files/figure-gfm/unnamed-chunk-5-2.png)<!-- -->
+<img src="Sales_contamination_files/figure-gfm/unnamed-chunk-5-2.png" style="display: block; margin: auto;" />
 
 ``` r
 AICc(mod_gaus)
@@ -176,7 +176,7 @@ xcoord[labels == "Mir"] <- xcoord[labels == "Mir"] + 1400
 text(xcoord, ycoord+0.025, labels = labels)
 ```
 
-![](Sales_contamination_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+<img src="Sales_contamination_files/figure-gfm/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
 
 ``` r
 #dev.off()

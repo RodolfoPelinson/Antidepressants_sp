@@ -23,10 +23,10 @@ data_farmacos$urb <- data_general$urb[match(data_farmacos$bacia,data_general$mic
 
 data.frame(data_farmacos$bacia, data_farmacos$urb, data_farmacos$Decil)
 
-data_farmacos$urb[data_farmacos$bacia == "EBB_08" | 
-                    data_farmacos$bacia == "EBB_09" |
-                    data_farmacos$bacia == "EBB_11" |
-                    data_farmacos$bacia == "EBB_12"] <- 0 
+data_farmacos$urb[data_farmacos$bacia == "ebb008" | 
+                    data_farmacos$bacia == "ebb009" |
+                    data_farmacos$bacia == "ebb011" |
+                    data_farmacos$bacia == "ebb012"] <- 0 
 
 data_farmacos$urb[is.na(data_farmacos$urb)] <- data_farmacos$Decil[is.na(data_farmacos$urb)] + 5
 
@@ -101,7 +101,7 @@ library(car)
 
 Checking which of tweedie or gaussian distributions are better to model antidepressant concentration.
 
-```{r, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE, fig.width=10, fig.align="center"}
 mod_gaus <- glmmTMB(ng_L~kg, family = "gaussian", data = data_IQVIA_vs_encontrados)
 mod_tw <- glmmTMB(ng_L~kg, family = "tweedie", data = data_IQVIA_vs_encontrados)
 
@@ -122,7 +122,7 @@ aictab(list(mod_tw0, mod_tw))
 
 Same procedure for frequency of antidepressants:
 
-```{r, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE, fig.width=10, fig.align="center"}
 mod_gaus <- glmmTMB(frequencia~kg, family = "gaussian", data = data_IQVIA_vs_encontrados)
 mod_beta <- glmmTMB(frequencia~kg, family = ordbeta(link = "probit"), data = data_IQVIA_vs_encontrados, control = glmmTMBControl(optimizer = optim))
 
@@ -140,7 +140,7 @@ aictab(list(mod_gaus0, mod_gaus))
 
 Now ploting these models:
 
-```{r, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE, fig.width=10, fig.align="center"}
 new_data <- data.frame(kg = seq(min(data_IQVIA_vs_encontrados$kg), max(data_IQVIA_vs_encontrados$kg), length.out = 100))
 
 predicted_ng_L <- predict(mod_tw, newdata = new_data, type = "response")

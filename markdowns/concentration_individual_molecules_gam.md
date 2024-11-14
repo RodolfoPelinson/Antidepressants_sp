@@ -32,12 +32,12 @@ plotResiduals(simulateResiduals(O.desmethylvenlafaxine_model$best_model), quantr
 O.desmethylvenlafaxine_model$AICTAB
 ```
 
-    ##           dAICc       df
-    ## gam_1  0.000000 4.969087
-    ## gam_3  1.200956 5.685882
-    ## gam_4  1.206626 5.692072
-    ## gam_2  1.257072 5.571530
-    ## gam_0 11.095279 3.000000
+    ##            dAICc       df
+    ## gam_1  0.0000000 4.971650
+    ## gam_3  0.8188150 5.897255
+    ## gam_4  0.8309551 5.902092
+    ## gam_2  0.9993552 5.708132
+    ## gam_0 11.8326855 3.000000
 
 ``` r
 Hydroxybupropion_model <- select_gam(y = data_farmacos$Hydroxybupropion, x = data_farmacos$urb, drop.intercept = FALSE, family = "tw")
@@ -52,11 +52,11 @@ Hydroxybupropion_model$AICTAB
 ```
 
     ##              dAICc       df
-    ## gam_2 0.000000e+00 3.984909
-    ## gam_3 8.656733e-05 3.984952
-    ## gam_1 5.295415e-04 3.985162
-    ## gam_4 6.320908e-04 3.985221
-    ## gam_0 5.326113e+00 3.000000
+    ## gam_3 0.0000000000 3.985762
+    ## gam_4 0.0002795905 3.985907
+    ## gam_2 0.0003035746 3.985920
+    ## gam_1 0.0004842460 3.986002
+    ## gam_0 5.5275188763 3.000000
 
 ``` r
 Bupropion_model <- select_gam(y = data_farmacos$Bupropion, x = data_farmacos$urb, family = "tw")
@@ -72,10 +72,10 @@ Bupropion_model$AICTAB
 
     ##              dAICc       df
     ## gam_0 0.0000000000 3.000000
-    ## gam_1 0.0001734110 3.000124
-    ## gam_3 0.0006968474 3.000494
-    ## gam_2 0.0007286573 3.000516
-    ## gam_4 0.0011064381 3.000782
+    ## gam_2 0.0007142002 3.000513
+    ## gam_3 0.0007478917 3.000537
+    ## gam_4 0.0008935039 3.000641
+    ## gam_1 0.0032908018 3.002521
 
 ``` r
 Venlafaxine_model <- select_gam(y = data_farmacos$Venlafaxine, x = data_farmacos$urb, family = "tw")
@@ -90,11 +90,11 @@ Venlafaxine_model$AICTAB
 ```
 
     ##           dAICc       df
-    ## gam_1 0.0000000 4.632775
-    ## gam_3 0.1159870 4.569797
-    ## gam_2 0.1171982 4.573010
-    ## gam_4 0.1185912 4.572033
-    ## gam_0 8.9196484 3.000000
+    ## gam_1 0.0000000 4.668499
+    ## gam_3 0.1345404 4.600296
+    ## gam_4 0.1358352 4.601320
+    ## gam_2 0.1399008 4.607200
+    ## gam_0 9.0705145 3.000000
 
 ``` r
 Desmethylcitalopram_model <- select_gam(y = data_farmacos$Desmethylcitalopram, x = data_farmacos$urb, family = "tw")
@@ -109,11 +109,11 @@ Desmethylcitalopram_model$AICTAB
 ```
 
     ##              dAICc       df
-    ## gam_1 0.000000e+00 3.987341
-    ## gam_3 2.907610e-06 3.987345
-    ## gam_4 7.631416e-05 3.987378
-    ## gam_2 2.150964e-04 3.987438
-    ## gam_0 6.255885e+00 3.000000
+    ## gam_3 0.000000e+00 3.987633
+    ## gam_4 4.882549e-05 3.987655
+    ## gam_2 1.988624e-04 3.987720
+    ## gam_1 2.841676e-04 3.987756
+    ## gam_0 6.361147e+00 3.000000
 
 ``` r
 Citalopram_model <- select_gam(y = data_farmacos$Citalopram, x = data_farmacos$urb, family = "tw")
@@ -128,11 +128,11 @@ Citalopram_model$AICTAB
 ```
 
     ##           dAICc       df
-    ## gam_1 0.0000000 4.191651
-    ## gam_2 0.6844870 4.869491
-    ## gam_4 0.6942098 4.976750
-    ## gam_3 0.6991439 4.980461
-    ## gam_0 3.4393093 3.000000
+    ## gam_1 0.0000000 4.274569
+    ## gam_2 0.5922851 4.856147
+    ## gam_4 0.6251028 4.986482
+    ## gam_3 0.6288800 4.989637
+    ## gam_0 3.3779255 3.000000
 
 ``` r
 Norfluoxetina_model <- select_gam(y = data_farmacos$Norfluoxetina, x = data_farmacos$urb, family = "tw")
@@ -147,11 +147,11 @@ Norfluoxetina_model$AICTAB
 ```
 
     ##           dAICc       df
-    ## gam_4 0.0000000 5.168683
-    ## gam_0 0.5878618 3.000000
-    ## gam_1 0.5878800 3.000012
-    ## gam_2 0.5878884 3.000020
-    ## gam_3 0.5878978 3.000028
+    ## gam_3 0.0000000 4.937273
+    ## gam_0 0.8839997 3.000000
+    ## gam_1 0.8840012 3.000004
+    ## gam_4 0.8840210 3.000015
+    ## gam_2 0.8840302 3.000022
 
 ``` r
 Fluoxetine_model <- select_gam(y = data_farmacos$Fluoxetine, x = data_farmacos$urb, family = "tw")
@@ -166,11 +166,11 @@ Fluoxetine_model$AICTAB
 ```
 
     ##          dAICc       df
-    ## gam_1 0.000000 4.912255
-    ## gam_2 1.040516 5.146769
-    ## gam_3 1.070108 5.184122
-    ## gam_4 1.074351 5.186003
-    ## gam_0 5.911147 3.000000
+    ## gam_1 0.000000 4.913659
+    ## gam_2 1.021624 5.161286
+    ## gam_3 1.053686 5.195265
+    ## gam_4 1.057328 5.197056
+    ## gam_0 5.991197 3.000000
 
 ``` r
 Amitriptyline_model <- select_gam(y = data_farmacos$Amitriptyline, x = data_farmacos$urb, family = "tw")
@@ -185,11 +185,11 @@ Amitriptyline_model$AICTAB
 ```
 
     ##           dAICc       df
-    ## gam_1 0.0000000 4.822866
-    ## gam_2 0.4369207 4.761566
-    ## gam_4 0.4491292 4.756113
-    ## gam_3 0.4494355 4.760067
-    ## gam_0 7.4911708 3.000000
+    ## gam_1 0.0000000 4.830653
+    ## gam_2 0.4433371 4.795867
+    ## gam_3 0.4557376 4.790558
+    ## gam_4 0.4557437 4.786905
+    ## gam_0 7.6142452 3.000000
 
 ``` r
 Trimipramine_model <- select_gam(y = data_farmacos$Trimipramine, x = data_farmacos$urb, family = "tw")
@@ -204,11 +204,11 @@ Trimipramine_model$AICTAB
 ```
 
     ##           dAICc       df
-    ## gam_1 0.0000000 3.913858
-    ## gam_0 0.9805555 3.000000
-    ## gam_2 0.9805568 3.000003
-    ## gam_3 0.9805660 3.000007
-    ## gam_4 0.9805661 3.000008
+    ## gam_1 0.0000000 3.913561
+    ## gam_0 0.8372199 3.000000
+    ## gam_2 0.8372201 3.000002
+    ## gam_3 0.8372249 3.000005
+    ## gam_4 0.8372276 3.000006
 
 ``` r
 Sertraline_model <- select_gam(y = data_farmacos$Sertraline, x = data_farmacos$urb, family = "tw")
@@ -223,11 +223,11 @@ Sertraline_model$AICTAB
 ```
 
     ##           dAICc       df
-    ## gam_1  0.000000 4.958189
-    ## gam_2  1.848853 5.457489
-    ## gam_3  1.946733 5.509566
-    ## gam_4  1.953886 5.513851
-    ## gam_0 16.374421 3.000000
+    ## gam_1  0.000000 4.958475
+    ## gam_2  1.837308 5.466046
+    ## gam_3  1.934482 5.515251
+    ## gam_4  1.940906 5.519185
+    ## gam_0 16.474183 3.000000
 
 Our models generally fitted well within the chosen statistical
 distribution (tweedie). With the exception of Trimipramine,
