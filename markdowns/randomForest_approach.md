@@ -64,16 +64,16 @@ partialPlot(RFmodel, Preditoras_stand, "Average_Income")
 The effect of the number of inhabitants seems to be generally positive.
 
 The effect of the number of households without sanitation seems to have
-a strong positive effect as the number of houses goes from zero to a
-few, but then it strongly decreases.
+a positive effect as the number of houses goes from zero to a few, but
+then it strongly decreases.
 
 Finally, average income seems to have a positive effect on total
 antidepressant concentration.
 
 Something important is that average income and number of households
 without sanitation are somewhat correlated. We do observe variation in
-the number of households without sanitation in for the low income
-watersheds, but high income watersheds only exhibit smaller number of
+the number of households without sanitation for the low income
+watersheds, but high income watersheds only exhibit a small number of
 households without sanitation. This may be the reason why we observe an
 increase followed by a decrease of antidepressant concentration as we
 increase the number of households without sanitation in the watershed.
@@ -140,8 +140,7 @@ partialPlot(RFmodel, Preditoras_stand, "Inhabitants")
 ![](randomForest_approach_files/figure-gfm/unnamed-chunk-7-3.png)<!-- -->
 
 For the low income data set the effect the effects seems similar to the
-whole data set, with a spike in antidepressant concentration for very
-low income watersheds followed by a decrease in concentration.
+whole data set.
 
  
 
@@ -192,8 +191,13 @@ partialPlot(RFmodel, Preditoras_stand, "Inhabitants")
 ![](randomForest_approach_files/figure-gfm/unnamed-chunk-8-3.png)<!-- -->
 
 For the high income data set both number of inhabitants and number of
-households without sanitation have positive effects on total
-antidepressant concentration.
+households without sanitation have general positive effects on total
+antidepressant concentration, with a small decrease at the end of the
+gradient for the number of households without sanitation.
 
-Apparently, the positive effect of the number of households without
-sanitation is only positive for the upper portion of average income.
+## Conclusion
+
+Apparently, the effect of the number of households without sanitation is
+generally negative for the lower portion of average income and positive
+for the upper portion. The number of inhabitants is always positively
+correlated to the total concentration of antidepressants.

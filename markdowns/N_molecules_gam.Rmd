@@ -1,0 +1,317 @@
+---
+title: "Number of molecules across the gradient in urban cover"
+author: "Rodolfo Pelinson"
+date: "2024-11-13"
+output: github_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r,  echo= FALSE, eval = TRUE, warning=FALSE, message=FALSE, include=FALSE}
+
+library(vegan)
+library(shape)
+library(scales)
+library(metacom)
+library(AICcmodavg)
+library(bbmle)
+
+
+data_farmacos <- read.csv("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/data/antidepressivos_r.csv")
+data_farmacos <- data_farmacos[,which(colnames(data_farmacos)!="Norfluoxetina")]
+data_general <- read.csv("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/data/planilha_master_r.csv")
+
+data_farmacos_reference <- data_farmacos[1,]
+data_farmacos_class <- data_farmacos[2,]
+data_farmacos <- data_farmacos[-c(1,2),]
+
+data_farmacos$urb <- data_general$urb[match(data_farmacos$bacia,data_general$microbacia)]
+
+data.frame(data_farmacos$bacia, data_farmacos$urb, data_farmacos$Decil)
+
+data_farmacos$urb[data_farmacos$bacia == "ebb08" | 
+                    data_farmacos$bacia == "ebb09" |
+                    data_farmacos$bacia == "ebb11" |
+                    data_farmacos$bacia == "ebb12"] <- 0 
+
+
+data_farmacos$urb[is.na(data_farmacos$urb)] <- data_farmacos$Decil[is.na(data_farmacos$urb)] + 5
+
+urb <- data_farmacos$urb
+Decil <- data_farmacos$Decil
+bacia <- data_farmacos$bacia
+
+data_farmacos <- data_farmacos[,-c(1,2,ncol(data_farmacos))]
+data_farmacos_reference <- data_farmacos_reference[,-c(1,2)]
+data_farmacos_class <- data_farmacos_class[,-c(1,2)]
+
+data_farmacos <- data.frame(lapply(data_farmacos,as.numeric))
+
+data_farmacos_pa <- decostand(data_farmacos, method = "pa")
+
+
+#data_farmacos_reference <- data_farmacos_reference[,colSums(data_farmacos)>0]
+#data_farmacos_class <- data_farmacos_class[,colSums(data_farmacos) > 0]
+#data_farmacos <- data_farmacos[,colSums(data_farmacos) > 0]
+
+data_farmacos_class <- unlist(c(data_farmacos_class))
+
+classess <- unique(data_farmacos_class)
+
+data_farmacos_by_class <- list()
+
+for(i in 1:length(classess)){
+  if(is.null(ncol(data_farmacos_pa[,data_farmacos_class == classess[i]])) == FALSE){
+    sums <- rowSums(data_farmacos_pa[,data_farmacos_class == classess[i]]) 
+    data_farmacos_by_class[[i]] <- sums
+    names(data_farmacos_by_class)[i] <- classess[i]
+  }else{
+    sums <- rep(0, nrow(data_farmacos_pa))
+    data_farmacos_by_class[[i]] <- sums
+    names(data_farmacos_by_class)[i] <- classess[i]
+  }
+}
+
+data_farmacos_by_class <- data.frame(data_farmacos_by_class)
+
+n_pharma <- rowSums(data_farmacos_by_class)
+
+data_farmacos_conc <- data.frame(bacia, Decil, urb, data_farmacos_by_class, n_pharma)
+
+
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+library(vegan)
+library(shape)
+library(scales)
+library(AICcmodavg)
+library(bbmle)
+library(mgcv)
+library(DHARMa)
+```
+
+
+Here we use a custom function that I made to fit several gam models with different maximum numbers of k and than make model selection using AICc. This function uses the gam function from mgcv package.
+
+
+
+```{r, fig.width=10, fig.align= "center"}
+source("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/scripts/functions/select_gam.R")
+
+n_pharma_model <- select_gam(y = data_farmacos_conc$n_pharma, x = data_farmacos_conc$urb, family = "nb")
+par(mfrow = c(1,2))
+plotQQunif(simulateResiduals(n_pharma_model$best_model), testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(simulateResiduals(n_pharma_model$best_model), quantreg = FALSE, smoothScatter = FALSE, absoluteDeviation = FALSE)
+n_pharma_model$AICTAB
+
+SNRI_model <- select_gam(y = data_farmacos_conc$SNRI, x = data_farmacos_conc$urb, family = "nb", drop.intercept = FALSE)
+plotQQunif(simulateResiduals(SNRI_model$best_model), testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(simulateResiduals(SNRI_model$best_model), quantreg = FALSE, smoothScatter = FALSE, absoluteDeviation = FALSE)
+SNRI_model$AICTAB
+
+SSRI_model <- select_gam(y = data_farmacos_conc$SSRI, x = data_farmacos_conc$urb, family = "nb")
+plotQQunif(simulateResiduals(SSRI_model$best_model), testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(simulateResiduals(SSRI_model$best_model), quantreg = FALSE, smoothScatter = FALSE, absoluteDeviation = FALSE)
+SSRI_model$AICTAB
+
+Tricyclic_model <- select_gam(y = data_farmacos_conc$Tricyclic, x = data_farmacos_conc$urb, family = "nb", drop.intercept = FALSE)
+plotQQunif(simulateResiduals(Tricyclic_model$best_model), testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(simulateResiduals(Tricyclic_model$best_model), quantreg = FALSE, smoothScatter = FALSE, absoluteDeviation = FALSE)
+Tricyclic_model$AICTAB
+
+Aminoketone_model <- select_gam(y = data_farmacos_conc$Aminoketone, x = data_farmacos_conc$urb, family = "nb")
+plotQQunif(simulateResiduals(Aminoketone_model$best_model), testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(simulateResiduals(Aminoketone_model$best_model), quantreg = FALSE, smoothScatter = FALSE, absoluteDeviation = FALSE)
+Aminoketone_model$AICTAB
+```
+
+
+Our models generally fitted well within the chosen statistical distribution. Residuals generally exhibited somewhat lower values for low fitted values for the total concentration of antidepressants, which might indicate that there might be other important predictors to the number of antidepressants found in streamwater. Still, all models including urban cover as a predictor was considered more plausible than the model without any effect of urban cover. Only the model for the frequency of Aminoketone antidepressants had the "no effect" model as a plausible model, though it was at the margin the the threshold for plausibility (i.e. delta AICc = 2), meaning that the best model is still fairly more plausible.
+
+\ 
+\ 
+
+Ploting the best models:
+
+```{r, fig.asp=1.3, fig.width=8, fig.align= "center", dev.args=list(pointsize = 15)}
+ylab.cex <- 0.9
+xlab.cex <- 0.9
+axis.cex <- 0.75
+line_labs <- 1.25
+line_axis <- -0.75
+tck <- -0.03
+cex.points <- 0.7
+line_lwd <- 1.25
+
+n_pharma_plot <- function(letter = "", x_letter = 0, y_letter = 100){
+  plot(data_farmacos_conc$n_pharma ~ data_farmacos_conc$urb , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "")
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "N of API", line = line_labs, cex.lab = ylab.cex)
+  polygon(y = c(n_pharma_model$estimates_best$lwr, n_pharma_model$estimates_best$upr[101:1]),
+          x = c(0:100,100:0), col = "grey90", border = FALSE)
+  #abline(h = data_farmacos_reference$n_pharma, lty = 2, col = "brown")
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = 0.7, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = 0.7, line = line_axis, gap.axis = -10)
+  lines(c(0:100), n_pharma_model$estimates_best$fit, lty = 1, lwd  = line_lwd)
+  points(x = data_farmacos_conc$urb, y = data_farmacos_conc$n_pharma, pch = 16, cex = cex.points)
+  margins <- par()$mar
+  par(new = TRUE, mar = c(0,0,0,0))
+  plot(NA , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", bty = "n", xlim = c(0,100), ylim = c(0,100))
+  text(x = x_letter, y = y_letter, labels = letter, font = 2, cex = 1.5, adj = 0)
+  par(mar = margins)
+  box()
+}
+
+
+
+SNRI_plot <- function(letter = "", x_letter = 0, y_letter = 100){
+  plot(data_farmacos_conc$SNRI ~ data_farmacos_conc$urb , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", ylim = c(0,2.5))
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "N of API (SNRI)", line = line_labs, cex.lab = ylab.cex)
+  polygon(y = c(SNRI_model$estimates_best$lwr, SNRI_model$estimates_best$upr[101:1]),
+          x = c(0:100,100:0), col = "grey90", border = FALSE)
+  #abline(h = data_farmacos_conc_reference$SNRI, lty = 2, col = "brown")
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, at = c(0,1,2),line = 0, labels = FALSE,  tck = tck); 
+  axis(2, tick = FALSE, at = c(0,1,2), cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  lines(c(0:100), SNRI_model$estimates_best$fit, lty = 1, lwd  = line_lwd)
+  points(x = data_farmacos_conc$urb, y = data_farmacos_conc$SNRI, pch = 16, cex = cex.points)
+  margins <- par()$mar
+  par(new = TRUE, mar = c(0,0,0,0))
+  plot(NA , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", bty = "n", xlim = c(0,100), ylim = c(0,100))
+  text(x = x_letter, y = y_letter, labels = letter, font = 2, cex = 1.5, adj = 0)
+  par(mar = margins)
+  box()
+}
+
+
+
+SSRI_plot <- function(letter = "", x_letter = 0, y_letter = 100){
+  plot(data_farmacos_conc$SSRI ~ data_farmacos_conc$urb , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "")
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "N of API (SSRI)", line = line_labs, cex.lab = ylab.cex)
+  polygon(y = c(SSRI_model$estimates_best$lwr, SSRI_model$estimates_best$upr[101:1]),
+          x = c(0:100,100:0), col = "grey90", border = FALSE)
+  #abline(h = data_farmacos_conc_reference$SSRI, lty = 2, col = "brown")
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  lines(c(0:100), SSRI_model$estimates_best$fit, lty = 1, lwd  = line_lwd)
+  points(x = data_farmacos_conc$urb, y = data_farmacos_conc$SSRI, pch = 16, cex = cex.points)
+  margins <- par()$mar
+  par(new = TRUE, mar = c(0,0,0,0))
+  plot(NA , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", bty = "n", xlim = c(0,100), ylim = c(0,100))
+  text(x = x_letter, y = y_letter, labels = letter, font = 2, cex = 1.5, adj = 0)
+  par(mar = margins)
+  box()
+}
+
+
+
+Tricyclic_plot <- function(letter = "", x_letter = 0, y_letter = 100){
+  plot(data_farmacos_conc$Tricyclic ~ data_farmacos_conc$urb , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "")
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "N of API (Tricyclic)", line = line_labs, cex.lab = ylab.cex)
+  #polygon(y = c(Tricyclic_model$estimates_second$lwr, Tricyclic_model$estimates_second$upr[101:1]),
+  #        x = c(0:100,100:0), col = "grey90", border = FALSE)
+  
+  polygon(y = c(Tricyclic_model$estimates_best$lwr, Tricyclic_model$estimates_best$upr[101:1]),
+          x = c(0:100,100:0), col = "grey90", border = FALSE)
+
+  #abline(h = data_farmacos_conc_reference$Tricyclic, lty = 2, col = "brown")
+  axis(1, tick = TRUE, line = 0,labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0,  at = c(0,1,2), labels = FALSE,  tck = tck); axis(2,  at = c(0,1,2),tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  #lines(c(0:100), Tricyclic_model$estimates_second$fit, lty = 2, lwd  = line_lwd, col = "grey40")
+  lines(c(0:100), Tricyclic_model$estimates_best$fit, lty = 1, lwd  = line_lwd, col = "black")
+  
+  points(x = data_farmacos_conc$urb, y = data_farmacos_conc$Tricyclic, pch = 16, cex = cex.points)
+  margins <- par()$mar
+  par(new = TRUE, mar = c(0,0,0,0))
+  plot(NA , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", bty = "n", xlim = c(0,100), ylim = c(0,100))
+  text(x = x_letter, y = y_letter, labels = letter, font = 2, cex = 1.5, adj = 0)
+  par(mar = margins)
+  box()
+}
+
+
+
+Aminoketone_plot <- function(letter = "", x_letter = 0, y_letter = 100){
+  plot(data_farmacos_conc$Aminoketone ~ data_farmacos_conc$urb , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "")
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "N of API", line = 2, cex.lab = ylab.cex)
+  title(ylab = "(Aminoketone)", line = 1.25, cex.lab = ylab.cex)
+  
+  #polygon(y = c(Aminoketone_model$estimates_second$lwr, Aminoketone_model$estimates_second$upr[101:1]),
+  #        x = c(0:100,100:0), col = "grey90", border = FALSE)
+  
+  polygon(y = c(Aminoketone_model$estimates_best$lwr, Aminoketone_model$estimates_best$upr[101:1]),
+          x = c(0:100,100:0), col = "grey90", border = FALSE)
+  
+  #abline(h = data_farmacos_conc_reference$Aminoketone, lty = 2, col = "brown")
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, at = c(0,1,2), line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, at = c(0,1,2), cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  #lines(c(0:100), Aminoketone_model$estimates_second$fit, lty = 2, lwd  = line_lwd, col = "grey40")
+  lines(c(0:100), Aminoketone_model$estimates_best$fit, lty = 1, lwd  = line_lwd, col = "black")
+  
+  points(x = data_farmacos_conc$urb, y = data_farmacos_conc$Aminoketone, pch = 16, cex = cex.points)
+  margins <- par()$mar
+  par(new = TRUE, mar = c(0,0,0,0))
+  plot(NA , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", bty = "n", xlim = c(0,100), ylim = c(0,100))
+  text(x = x_letter, y = y_letter, labels = letter, font = 2, cex = 1.5, adj = 0)
+  par(mar = margins)
+  box()
+}
+
+
+
+par(mfrow = c(3,2), mar = c(3.5,3.5,0.5,0.5))
+
+n_pharma_plot(letter = "A)")
+SSRI_plot(letter = "B)")
+SNRI_plot(letter = "C)")
+Aminoketone_plot(letter = "D)")
+Tricyclic_plot(letter = "E)")
+```
+
+
+```{r, eval = FALSE, echo=FALSE, include=FALSE, fig.asp=0.5, fig.width=10, fig.align= "center"}
+pdf("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/Resultados/Resultados Antidepressivos/Figuras/PDF/Paper/Antidepressivos_GAM_N_SEM_ZERO.pdf", width = 4, height = 5)
+par(mfrow = c(3,2), mar = c(3.5,3.5,0.5,0.5))
+
+n_pharma_plot(letter = "A)")
+SSRI_plot(letter = "B)")
+SNRI_plot(letter = "C)")
+Aminoketone_plot(letter = "D)")
+Tricyclic_plot(letter = "E)")
+
+dev.off()
+```
+
+
+```{r, eval = FALSE, echo=FALSE, include=FALSE, fig.asp=0.5, fig.width=10, fig.align= "center"}
+
+model_tabs_by_class <- list(n_pharma_model$AICTAB ,
+                            SNRI_model$AICTAB,
+                            SSRI_model$AICTAB,
+                            Aminoketone_model$AICTAB,
+                            Tricyclic_model$AICTAB)
+
+names(model_tabs_by_class) <- c("All",
+                                "SNRI",
+                                "SSRI",
+                                "Aminoketone",
+                                "Tricyclic")
+
+
+order <- c("gam_0","gam_1","gam_2","gam_3","gam_4")
+
+for(i in 1:length(model_tabs_by_class)){
+  model_tabs_by_class[[i]] <- model_tabs_by_class[[i]][match(order,rownames(model_tabs_by_class[[i]])),]
+}
+
+
+write.csv(model_tabs_by_class,"Resultados/model_selection_GAM_N.csv")
+
+```
+

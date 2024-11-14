@@ -1,0 +1,453 @@
+---
+title: "Concentration of molecules across the gradient in urban cover"
+author: "Rodolfo Pelinson"
+date: "2024-11-14"
+output: github_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r,  echo= FALSE, eval = TRUE, warning=FALSE, message=FALSE, include=FALSE}
+library(vegan)
+library(shape)
+library(scales)
+library(metacom)
+library(AICcmodavg)
+library(bbmle)
+
+
+data_farmacos <- read.csv("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/data/antidepressivos_r.csv")
+data_general <- read.csv("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/data/planilha_master_r.csv")
+
+data_farmacos_reference <- data_farmacos[1,]
+data_farmacos_class <- data_farmacos[2,]
+data_farmacos <- data_farmacos[-c(1,2),]
+
+data_farmacos$urb <- data_general$urb[match(data_farmacos$bacia,data_general$microbacia)]
+
+data.frame(data_farmacos$bacia, data_farmacos$urb, data_farmacos$Decil)
+
+data_farmacos$urb[data_farmacos$bacia == "ebb08" | 
+                    data_farmacos$bacia == "ebb09" |
+                    data_farmacos$bacia == "ebb11" |
+                    data_farmacos$bacia == "ebb12"] <- 0 
+
+data_farmacos$urb[is.na(data_farmacos$urb)] <- data_farmacos$Decil[is.na(data_farmacos$urb)] + 5
+
+data.frame(data_farmacos$bacia, data_farmacos$urb, data_farmacos$Decil)
+
+
+urb <- data_farmacos$urb
+Decil <- data_farmacos$Decil
+bacia <- data_farmacos$bacia
+
+data_farmacos <- data_farmacos[,-c(1,2,ncol(data_farmacos))]
+data_farmacos_reference <- data_farmacos_reference[,-c(1,2)]
+
+data_farmacos <- data.frame(lapply(data_farmacos,as.numeric))
+
+colSums(data_farmacos)
+
+data_farmacos_reference <- data_farmacos_reference[,colSums(data_farmacos)>0]
+
+data_farmacos <- data_farmacos[,colSums(data_farmacos) > 0]
+
+data_farmacos <- data.frame(bacia, urb, Decil, data_farmacos)
+```
+
+```{r, message=FALSE, warning=FALSE}
+library(vegan)
+library(shape)
+library(scales)
+library(AICcmodavg)
+library(bbmle)
+library(mgcv)
+library(DHARMa)
+```
+
+Here we use a custom function that I made to fit several gam models with different maximum numbers of k and than make model selection using AICc. This function uses the gam function from mgcv package.
+
+```{r, fig.width=10, fig.align= "center", message = FALSE}
+source("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/scripts/functions/select_gam.R")
+
+O.desmethylvenlafaxine_model <- select_gam(y = data_farmacos$O.desmethylvenlafaxine, x = data_farmacos$urb, family = "tw")
+par(mfrow = c(1,2))
+plotQQunif(simulateResiduals(O.desmethylvenlafaxine_model$best_model), testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(simulateResiduals(O.desmethylvenlafaxine_model$best_model), quantreg = FALSE, smoothScatter = FALSE, absoluteDeviation = FALSE)
+O.desmethylvenlafaxine_model$AICTAB
+
+Hydroxybupropion_model <- select_gam(y = data_farmacos$Hydroxybupropion, x = data_farmacos$urb, drop.intercept = FALSE, family = "tw")
+plotQQunif(simulateResiduals(Hydroxybupropion_model$best_model), testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(simulateResiduals(Hydroxybupropion_model$best_model), quantreg = FALSE, smoothScatter = FALSE, absoluteDeviation = FALSE)
+Hydroxybupropion_model$AICTAB
+
+Bupropion_model <- select_gam(y = data_farmacos$Bupropion, x = data_farmacos$urb, family = "tw")
+plotQQunif(simulateResiduals(Bupropion_model$best_model), testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(simulateResiduals(Bupropion_model$best_model), quantreg = FALSE, smoothScatter = FALSE, absoluteDeviation = FALSE)
+Bupropion_model$AICTAB
+
+Venlafaxine_model <- select_gam(y = data_farmacos$Venlafaxine, x = data_farmacos$urb, family = "tw")
+plotQQunif(simulateResiduals(Venlafaxine_model$best_model), testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(simulateResiduals(Venlafaxine_model$best_model), quantreg = FALSE, smoothScatter = FALSE, absoluteDeviation = FALSE)
+Venlafaxine_model$AICTAB
+
+Desmethylcitalopram_model <- select_gam(y = data_farmacos$Desmethylcitalopram, x = data_farmacos$urb, family = "tw")
+plotQQunif(simulateResiduals(Desmethylcitalopram_model$best_model), testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(simulateResiduals(Desmethylcitalopram_model$best_model), quantreg = FALSE, smoothScatter = FALSE, absoluteDeviation = FALSE)
+Desmethylcitalopram_model$AICTAB
+
+Citalopram_model <- select_gam(y = data_farmacos$Citalopram, x = data_farmacos$urb, family = "tw")
+plotQQunif(simulateResiduals(Citalopram_model$best_model), testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(simulateResiduals(Citalopram_model$best_model), quantreg = FALSE, smoothScatter = FALSE, absoluteDeviation = FALSE)
+Citalopram_model$AICTAB
+
+Norfluoxetina_model <- select_gam(y = data_farmacos$Norfluoxetina, x = data_farmacos$urb, family = "tw")
+plotQQunif(simulateResiduals(Norfluoxetina_model$best_model), testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(simulateResiduals(Norfluoxetina_model$best_model), quantreg = FALSE, smoothScatter = FALSE, absoluteDeviation = FALSE)
+Norfluoxetina_model$AICTAB
+
+Fluoxetine_model <- select_gam(y = data_farmacos$Fluoxetine, x = data_farmacos$urb, family = "tw")
+plotQQunif(simulateResiduals(Fluoxetine_model$best_model), testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(simulateResiduals(Fluoxetine_model$best_model), quantreg = FALSE, smoothScatter = FALSE, absoluteDeviation = FALSE)
+Fluoxetine_model$AICTAB
+
+Amitriptyline_model <- select_gam(y = data_farmacos$Amitriptyline, x = data_farmacos$urb, family = "tw")
+plotQQunif(simulateResiduals(Amitriptyline_model$best_model), testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(simulateResiduals(Amitriptyline_model$best_model), quantreg = FALSE, smoothScatter = FALSE, absoluteDeviation = FALSE)
+Amitriptyline_model$AICTAB
+
+Trimipramine_model <- select_gam(y = data_farmacos$Trimipramine, x = data_farmacos$urb, family = "tw")
+plotQQunif(simulateResiduals(Trimipramine_model$best_model), testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(simulateResiduals(Trimipramine_model$best_model), quantreg = FALSE, smoothScatter = FALSE, absoluteDeviation = FALSE)
+Trimipramine_model$AICTAB
+
+Sertraline_model <- select_gam(y = data_farmacos$Sertraline, x = data_farmacos$urb, family = "tw")
+plotQQunif(simulateResiduals(Sertraline_model$best_model), testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(simulateResiduals(Sertraline_model$best_model), quantreg = FALSE, smoothScatter = FALSE, absoluteDeviation = FALSE)
+Sertraline_model$AICTAB
+```
+
+Our models generally fitted well within the chosen statistical distribution (tweedie). With the exception of Trimipramine, Norfluoxetine and Bupropion, all models including urban cover as a predictor was considered by far more plausible than the model without any effect of urban cover. 
+
+\ 
+\ 
+
+Ploting the best models:
+
+```{r, fig.asp=2.6, fig.width=8, fig.align= "center", dev.args=list(pointsize = 15)}
+ylab.cex <- 0.9
+xlab.cex <- 0.9
+axis.cex <- 0.75
+line_labs <- 1.25
+line_axis <- -0.75
+tck <- -0.03
+cex.points <- 0.7
+line_lwd <- 1.25
+cex.letter <- 1.25
+x_letter = 5
+y_letter = 98
+
+O.desmethylvenlafaxine_plot <- function(letter = ""){
+  plot(data_farmacos$O.desmethylvenlafaxine ~ data_farmacos$urb , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "")
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "O-desmethylvenlafaxine", line = 2, cex.lab = ylab.cex)
+  title(ylab = "(ng/L)", line = 1.25, cex.lab = ylab.cex)
+  polygon(y = c(O.desmethylvenlafaxine_model$estimates_best$lwr, O.desmethylvenlafaxine_model$estimates_best$upr[101:1]),
+          x = c(0:100,100:0), col = "grey90", border = FALSE)
+  abline(h = data_farmacos_reference$O.desmethylvenlafaxine, lty = 2, col = "brown")
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  lines(c(0:100), O.desmethylvenlafaxine_model$estimates_best$fit, lty = 1, lwd  = line_lwd)
+  points(x = data_farmacos$urb, y = data_farmacos$O.desmethylvenlafaxine, pch = 16, cex = cex.points)
+  box()
+  margins <- par()$mar
+  par(new = TRUE, mar = c(0,0,0,0))
+  plot(NA , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", bty = "n", xlim = c(0,100), ylim = c(0,100))
+  text(x = x_letter, y = y_letter, labels = letter, font = 2, cex = cex.letter, adj = 0)
+  par(mar = margins)    
+}
+
+
+
+
+Hydroxybupropion_plot <- function(letter = ""){
+  plot(data_farmacos$Hydroxybupropion ~ data_farmacos$urb , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "")
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "Hydroxybupropion", line = 2, cex.lab = ylab.cex)
+  title(ylab = "(ng/L)", line = 1.25, cex.lab = ylab.cex)
+  polygon(y = c(Hydroxybupropion_model$estimates_best$lwr, Hydroxybupropion_model$estimates_best$upr[101:1]),
+          x = c(0:100,100:0), col = "grey90", border = FALSE)
+  abline(h = data_farmacos_reference$Hydroxybupropion, lty = 2, col = "brown")
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  lines(c(0:100), Hydroxybupropion_model$estimates_best$fit, lty = 1, lwd  = line_lwd)
+  points(x = data_farmacos$urb, y = data_farmacos$Hydroxybupropion, pch = 16, cex = cex.points)
+  box()
+  margins <- par()$mar
+  par(new = TRUE, mar = c(0,0,0,0))
+  plot(NA , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", bty = "n", xlim = c(0,100), ylim = c(0,100))
+  text(x = x_letter, y = y_letter, labels = letter, font = 2, cex = cex.letter, adj = 0)
+  par(mar = margins)  
+}
+
+
+Bupropion_plot <- function(letter = ""){
+  plot(data_farmacos$Bupropion ~ data_farmacos$urb , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "")
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "Bupropion (ng/L)", line = line_labs, cex.lab = ylab.cex)
+  
+  #polygon(y = c(Bupropion_model$estimates_best$lwr, Bupropion_model$estimates_best$upr[101:1]),
+  #        x = c(0:100,100:0), col = "grey90", border = FALSE)
+  abline(h = data_farmacos_reference$Bupropion, lty = 2, col = "brown")
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  #lines(c(0:100), Bupropion_model$estimates_best$fit, lty = 2, lwd  = line_lwd, col = "grey40")
+  points(x = data_farmacos$urb, y = data_farmacos$Bupropion, pch = 16, cex = cex.points)
+  margins <- par()$mar
+  par(new = TRUE, mar = c(0,0,0,0))
+  plot(NA , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", bty = "n", xlim = c(0,100), ylim = c(0,100))
+  text(x = x_letter, y = y_letter, labels = letter, font = 2, cex = cex.letter, adj = 0)
+  par(mar = margins)    
+}
+
+
+
+Venlafaxine_plot <- function(letter = ""){
+  plot(data_farmacos$Venlafaxine ~ data_farmacos$urb , type = "n", ylim = c(0,60), xaxt = "n", yaxt = "n", xlab = "", ylab = "")
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "Venlafaxine (ng/L)", line = line_labs, cex.lab = ylab.cex)
+  
+  polygon(y = c(Venlafaxine_model$estimates_best$lwr, Venlafaxine_model$estimates_best$upr[101:1]),
+          x = c(0:100,100:0), col = "grey90", border = FALSE)
+  abline(h = data_farmacos_reference$Venlafaxine, lty = 2, col = "brown")
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  lines(c(0:100), Venlafaxine_model$estimates_best$fit, lty = 1, lwd  = line_lwd, col = "black")
+  points(x = data_farmacos$urb, y = data_farmacos$Venlafaxine, pch = 16, cex = cex.points)
+  margins <- par()$mar
+  par(new = TRUE, mar = c(0,0,0,0))
+  plot(NA , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", bty = "n", xlim = c(0,100), ylim = c(0,100))
+  text(x = x_letter, y = y_letter, labels = letter, font = 2, cex = cex.letter, adj = 0)
+  par(mar = margins)  
+}
+
+
+
+Desmethylcitalopram_plot <- function(letter = ""){
+  plot(data_farmacos$Desmethylcitalopram ~ data_farmacos$urb , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "")
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "Desmethylcitalopram", line = 2, cex.lab = ylab.cex)
+  title(ylab = "(ng/L)", line = 1.25, cex.lab = ylab.cex)
+  polygon(y = c(Desmethylcitalopram_model$estimates_best$lwr, Desmethylcitalopram_model$estimates_best$upr[101:1]),
+          x = c(0:100,100:0), col = "grey90", border = FALSE)
+  abline(h = data_farmacos_reference$Desmethylcitalopram, lty = 2, col = "brown")
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  lines(c(0:100), Desmethylcitalopram_model$estimates_best$fit, lty = 1, lwd  = line_lwd, col = "black")
+  points(x = data_farmacos$urb, y = data_farmacos$Desmethylcitalopram, pch = 16, cex = cex.points)
+  box()
+  margins <- par()$mar
+  par(new = TRUE, mar = c(0,0,0,0))
+  plot(NA , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", bty = "n", xlim = c(0,100), ylim = c(0,100))
+  text(x = x_letter, y = y_letter, labels = letter, font = 2, cex = cex.letter, adj = 0)
+  par(mar = margins)  
+}
+
+
+Citalopram_plot <- function(letter = ""){
+  plot(data_farmacos$Citalopram ~ data_farmacos$urb , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "")
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "Citalopram (ng/L)", line = line_labs, cex.lab = ylab.cex)
+  
+  polygon(y = c(Citalopram_model$estimates_best$lwr, Citalopram_model$estimates_best$upr[101:1]),
+          x = c(0:100,100:0), col = "grey90", border = FALSE)
+  abline(h = data_farmacos_reference$Citalopram, lty = 2, col = "brown")
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  lines(c(0:100), Citalopram_model$estimates_best$fit, lty = 1, lwd  = line_lwd)
+  points(x = data_farmacos$urb, y = data_farmacos$Citalopram, pch = 16, cex = cex.points)
+  margins <- par()$mar
+  par(new = TRUE, mar = c(0,0,0,0))
+  plot(NA , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", bty = "n", xlim = c(0,100), ylim = c(0,100))
+  text(x = x_letter, y = y_letter, labels = letter, font = 2, cex = cex.letter, adj = 0)
+  par(mar = margins)  
+}
+
+
+
+Norfluoxetina_plot <- function(letter = ""){
+  plot(data_farmacos$Norfluoxetina ~ data_farmacos$urb , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "")
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "Norfluoxetina (ng/L)", line = line_labs, cex.lab = ylab.cex)
+  
+  #polygon(y = c(Norfluoxetina_model$estimates_second$lwr, Norfluoxetina_model$estimates_second$upr[101:1]),
+  #        x = c(0:100,100:0), col = "grey90", border = FALSE)
+  abline(h = data_farmacos_reference$Norfluoxetina, lty = 2, col = "brown") #LQ Talvez esteja errado
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  #lines(c(0:100), Norfluoxetina_model$estimates_second$fit, lty = 2, lwd  = line_lwd, col = "grey40")
+  points(x = data_farmacos$urb, y = data_farmacos$Norfluoxetina, pch = 16, cex = cex.points)
+  margins <- par()$mar
+  par(new = TRUE, mar = c(0,0,0,0))
+  plot(NA , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", bty = "n", xlim = c(0,100), ylim = c(0,100))
+  text(x = x_letter, y = y_letter, labels = letter, font = 2, cex = cex.letter, adj = 0)
+  par(mar = margins)  
+}
+
+
+
+Fluoxetine_plot <- function(letter = ""){
+  plot(data_farmacos$Fluoxetine ~ data_farmacos$urb , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "")
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "Fluoxetine (ng/L)", line = line_labs, cex.lab = ylab.cex)
+  
+  polygon(y = c(Fluoxetine_model$estimates_best$lwr, Fluoxetine_model$estimates_best$upr[101:1]),
+          x = c(0:100,100:0), col = "grey90", border = FALSE)
+  abline(h = data_farmacos_reference$Fluoxetine, lty = 2, col = "brown") #LQ Talvez esteja errado
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  lines(c(0:100), Fluoxetine_model$estimates_best$fit, lty = 1, lwd  = line_lwd)
+  points(x = data_farmacos$urb, y = data_farmacos$Fluoxetine, pch = 16, cex = cex.points)
+  margins <- par()$mar
+  par(new = TRUE, mar = c(0,0,0,0))
+  plot(NA , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", bty = "n", xlim = c(0,100), ylim = c(0,100))
+  text(x = x_letter, y = y_letter, labels = letter, font = 2, cex = cex.letter, adj = 0)
+  par(mar = margins)
+}
+
+
+
+
+Amitriptyline_plot <- function(letter = ""){
+  plot(data_farmacos$Amitriptyline ~ data_farmacos$urb , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "")
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "Amitriptyline (ng/L)", line = line_labs, cex.lab = ylab.cex)
+  
+  polygon(y = c(Amitriptyline_model$estimates_best$lwr, Amitriptyline_model$estimates_best$upr[101:1]),
+          x = c(0:100,100:0), col = "grey90", border = FALSE)
+  abline(h = data_farmacos_reference$Amitriptyline, lty = 2, col = "brown") #LQ Talvez esteja errado
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = line_axis, gap.axis = -10)
+  lines(c(0:100), Amitriptyline_model$estimates_best$fit, lty = 1, lwd  = line_lwd)
+  points(x = data_farmacos$urb, y = data_farmacos$Amitriptyline, pch = 16, cex = cex.points)
+  margins <- par()$mar
+  par(new = TRUE, mar = c(0,0,0,0))
+  plot(NA , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", bty = "n", xlim = c(0,100), ylim = c(0,100))
+  text(x = x_letter, y = y_letter, labels = letter, font = 2, cex = cex.letter, adj = 0)
+  par(mar = margins)
+}
+
+
+Trimipramine_plot <- function(letter = ""){
+  plot(data_farmacos$Trimipramine ~ data_farmacos$urb , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "")
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "Trimipramine (ng/L)", line = line_labs, cex.lab = ylab.cex)
+  
+  #polygon(y = c(Trimipramine_model$estimates_best$lwr, Trimipramine_model$estimates_best$upr[101:1]),
+  #        x = c(0:100,100:0), col = "grey90", border = FALSE)
+  abline(h = data_farmacos_reference$Trimipramine, lty = 2, col = "brown") #LQ Talvez esteja errado
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = -0.5, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = -0.5, gap.axis = -10)
+  #lines(c(0:100), Trimipramine_model$estimates_best$fit, lty = 1, lwd  = line_lwd, col = "black")
+  points(x = data_farmacos$urb, y = data_farmacos$Trimipramine, pch = 16, cex = cex.points)
+  margins <- par()$mar
+  par(new = TRUE, mar = c(0,0,0,0))
+  plot(NA , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", bty = "n", xlim = c(0,100), ylim = c(0,100))
+  text(x = x_letter, y = y_letter, labels = letter, font = 2, cex = cex.letter, adj = 0)
+  par(mar = margins)
+}
+
+Sertraline_plot <- function(letter = ""){
+  plot(data_farmacos$Sertraline ~ data_farmacos$urb , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "")
+  title(xlab = "Urban cover (%)", line = line_labs, cex.lab = xlab.cex)
+  title(ylab = "Sertraline (ng/L)", line = line_labs, cex.lab = ylab.cex)
+  
+  polygon(y = c(Sertraline_model$estimates_best$lwr, Sertraline_model$estimates_best$upr[101:1]),
+          x = c(0:100,100:0), col = "grey90", border = FALSE)
+  abline(h = data_farmacos_reference$Sertraline, lty = 2, col = "brown") #LQ Talvez esteja errado
+  axis(1, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(1, tick = FALSE, cex.axis = axis.cex, line = -0.5, gap.axis = -10)
+  axis(2, tick = TRUE, line = 0, labels = FALSE,  tck = tck); axis(2, tick = FALSE, cex.axis = axis.cex, line = -0.5, gap.axis = -10)
+  lines(c(0:100), Sertraline_model$estimates_best$fit, lty = 1, lwd  = line_lwd)
+  points(x = data_farmacos$urb, y = data_farmacos$Sertraline, pch = 16, cex = cex.points)
+  margins <- par()$mar
+  par(new = TRUE, mar = c(0,0,0,0))
+  plot(NA , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", bty = "n", xlim = c(0,100), ylim = c(0,100))
+  text(x = x_letter, y = y_letter, labels = letter, font = 2, cex = 1.5, adj = 0)
+  par(mar = margins)}
+
+
+
+par(mfrow = c(6,2), mar = c(2.5,3.5,1.2,0.25))
+
+Venlafaxine_plot(letter = "A)")
+O.desmethylvenlafaxine_plot(letter = "B)")
+Citalopram_plot(letter = "C)")
+Desmethylcitalopram_plot(letter = "D)")
+Bupropion_plot(letter = "E)")
+Hydroxybupropion_plot(letter = "F)")
+Amitriptyline_plot(letter = "G)")
+Sertraline_plot(letter = "H)")
+Fluoxetine_plot(letter = "I)")
+Trimipramine_plot(letter = "J)")
+Norfluoxetina_plot(letter = "K)")
+```
+
+
+
+```{r, eval = FALSE, echo=FALSE, include=FALSE, fig.asp=1, fig.width=10, fig.align= "center"}
+
+pdf("Resultados/Resultados Antidepressivos/Figuras/PDF/Antidepressivos_GAM_SEM_ZERO.pdf", width = 4, height = 7.5)
+par(mfrow = c(6,2), mar = c(2.5,3.5,1.2,0.25))
+
+Venlafaxine_plot(letter = "A)")
+O.desmethylvenlafaxine_plot(letter = "B)")
+Citalopram_plot(letter = "C)")
+Desmethylcitalopram_plot(letter = "D)")
+Bupropion_plot(letter = "E)")
+Hydroxybupropion_plot(letter = "F)")
+Amitriptyline_plot(letter = "G)")
+Sertraline_plot(letter = "H)")
+Fluoxetine_plot(letter = "I)")
+Trimipramine_plot(letter = "J)")
+Norfluoxetina_plot(letter = "K)")
+
+dev.off()
+```
+
+
+
+```{r, eval = FALSE, echo=FALSE, include=FALSE, fig.asp=0.5, fig.width=10, fig.align= "center"}
+
+model_tabs <- list(
+  O.desmethylvenlafaxine_model$AICTAB,
+  Desmethylcitalopram_model$AICTAB,
+  Hydroxybupropion_model$AICTAB,
+  Amitriptyline_model$AICTAB,
+  Sertraline_model$AICTAB,
+  Venlafaxine_model$AICTAB,
+  Fluoxetine_model$AICTAB,
+  Citalopram_model$AICTAB,
+  Bupropion_model$AICTAB,
+  Trimipramine_model$AICTAB)
+
+names(model_tabs) <- c("O.desmethylvenlafaxine",
+  "Desmethylcitalopram",
+  "Hydroxybupropion",
+  "Amitriptyline",
+  "Sertraline",
+  "Venlafaxine",
+  "Fluoxetine",
+  "Citalopram",
+  "Bupropion",
+  "Trimipramine")
+
+
+order <- c("gam_0","gam_1","gam_2","gam_3","gam_4")
+
+for(i in 1:length(model_tabs)){
+  model_tabs[[i]] <- model_tabs[[i]][match(order,rownames(model_tabs[[i]])),]
+}
+
+write.csv(model_tabs,"Resultados/model_selection_GAM_concentrations.csv")
+```
+

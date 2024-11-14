@@ -8,7 +8,7 @@ Rodolfo Pelinson
 Functions necessary for the following plots:
 
 ``` r
-plot_spatial_pattern <- function(y, main = ""){
+plot_spatial_pattern <- function(y, main = "", close.screens = TRUE, letter = NULL, ...){
   matrix <- matrix(data = c(0,.8,0,1,
                           .8,1,0,1), nrow = 2, ncol = 4, byrow = TRUE)
 
@@ -26,19 +26,34 @@ pal <- col_numeric(
 
 y_col <- pal(y)
 
-plot(coord$longitude, coord$latitude, xlab = "Longitud", ylab = "Latitud", pch = 21, bg = y_col, cex = 3, col = FALSE, main = main)
+plot(coord$longitude, coord$latitude, xlab = "Longitude", ylab = "Latitude", pch = 21, bg = y_col, cex = 2, col = FALSE, main = main, ...)
 
-legend<-seq(min(y), max(y), length.out = 100)
+
+if(is.null(letter) == FALSE){
+par(new = TRUE, mar = c(0,0,0,0))
+plot(NA , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", bty = "n", xlim = c(0,100), ylim = c(0,100))
+text(x = 0, y = 100, labels = letter, font = 2, cex = 2, adj = 0)
+}
+
 
 screen(screens[2])
 
-par(mar = c(4,2,3,4))
+legend<-seq(min(y), max(y), length.out = 100)
+
+
+par(mar = c(4,0.1,3,5))
 image(y = 1:length(legend),x = 1, z = t(as.matrix(1:length(legend))),
           col = pal(legend),
           axes = FALSE, xlab = "", ylab = "", xlim = c(0,1))
 axis(4, at = c(1, length(legend)/2,length(legend)), labels = round(legend[c(1,length(legend)/2,length(legend))],1), las = 2,
          cex.axis = 1, tick = TRUE, line = 0)
-close.screen(all.screens = TRUE)
+
+if(isTRUE(close.screens)){
+  close.screen(all.screens = TRUE)
+}
+
+
+
 }
 ```
 
@@ -47,16 +62,40 @@ colapsed_variogram <- function(variogram, dist_classes = 10){
   variogram <- variogram[order(variogram$dist),]
   new_seq <- seq(min(variogram$dist), max(variogram$dist), length.out = dist_classes)
   new_variogram <- rep(NA, length(new_seq)-1)
+  n <- rep(NA, length(new_seq)-1)
   for(i in 1:(length(new_seq) - 1)){
     new_variogram[i] <- mean(variogram$variog[variogram$dist >= new_seq[i] & variogram$dist < new_seq[i+1]])
+    n[i] <- length(variogram$variog[variogram$dist >= new_seq[i] & variogram$dist < new_seq[i+1]])
   }
-  new_variogram <- data.frame(variog = new_variogram, dist = new_seq[-length(new_seq)])
+  new_variogram <- data.frame(variog = new_variogram, dist = new_seq[-length(new_seq)], n = n)
   class(new_variogram) <- class(variogram)
   return(new_variogram)
 }
+
+plot_variogram <- function(variogram, letter = NULL, weights = FALSE, ...){
+if(isTRUE(weights)){
+  weights <- variogram$n
+  cex <- log(weights/min(weights))+1
+}else{
+  weights <- NULL
+  cex <- 1.5
+}
+par(mar = c(4,4,3,3))
+plot(variogram$variog ~ variogram$dist, ylab = "Semivariogram",
+     xlab = "Distance class", col = alpha("blue", 0.6), cex = cex, pch = 16, ylim = c(0,0.15), ...)
+newdata <- data.frame(variog = seq(min(variogram$dist), max(variogram$dist), length.out = 100))
+loess_var <- loess(variog ~ dist, data = variogram, span = 1.25, weights = weights)
+predicted <- predict(loess_var, newdata = as.matrix(newdata))
+lines(newdata$variog,predicted, lwd = 2, col = alpha("blue", 0.6))
+if(is.null(letter) == FALSE){
+par(new = TRUE, mar = c(0,0,0,0))
+plot(NA , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", bty = "n", xlim = c(0,100), ylim = c(0,100))
+text(x = 0, y = 100, labels = letter, font = 2, cex = 2, adj = 0)
+}
+}
 ```
 
-This is just the spatial pattern of the most important predictor
+This is just the spatial patterns of the most important predictor
 variables that we have.
 
 ``` r
@@ -72,15 +111,15 @@ plot_spatial_pattern(predictors$habitantes, main = "Inhanitants")
 ![](spatial_analyses_files/figure-gfm/unnamed-chunk-4-2.png)<!-- -->
 
 ``` r
-plot_spatial_pattern(predictors$renda, main = "Per capta average income")
+plot_spatial_pattern(predictors$renda, main = "Per capita average income")
 ```
 
-![](spatial_analyses_files/figure-gfm/unnamed-chunk-4-3.png)<!-- -->
+![](spatial_analyses_files/figure-gfm/unnamed-chunk-4-3.png)<!-- -->  
 
 As we can see, these variables do have some opposite spatial patterns.
 Specifically, the total number of houses without sanitation and total
-number of inhabitants exhibit opposite patterns to the per capta average
-income.
+number of inhabitants exhibit opposite patterns to the per capita
+average income.  
 
 ``` r
 plot_spatial_pattern(responses$all, main = "Antidepressant concentration")
@@ -114,12 +153,12 @@ plot_spatial_pattern(responses$Tricyclic, main = "Tricyclic Antidepressant conce
 
 These are the spatial patterns found for antidepressant concentration.
 It seems that the ones with high concentration are concentrated in the
-center of the distribution.
+center of the distribution.    
 
 ## Analysis for the total concentration of antidepressants
 
-First lets find the best model to predict the total concentration of
-antidepressants
+First let’s find the best model to predict the total concentration of
+antidepressants.
 
 ``` r
 #pred_mod_sel <- select(predictors, area, casas_sem_saneamento, renda, habitantes)
@@ -235,6 +274,42 @@ plot(resid_auto_correlation)
 ![](spatial_analyses_files/figure-gfm/unnamed-chunk-7-3.png)<!-- -->
 
 ``` r
+testSpatialAutocorrelation(resid_no_effect, x = coord$longitude, y = coord$latitude, plot = FALSE)
+```
+
+    ## 
+    ##  DHARMa Moran's I test for distance-based autocorrelation
+    ## 
+    ## data:  resid_no_effect
+    ## observed = 0.129632, expected = -0.020000, sd = 0.054844, p-value =
+    ## 0.006366
+    ## alternative hypothesis: Distance-based autocorrelation
+
+``` r
+testSpatialAutocorrelation(resid_all, x = coord$longitude, y = coord$latitude, plot = FALSE)
+```
+
+    ## 
+    ##  DHARMa Moran's I test for distance-based autocorrelation
+    ## 
+    ## data:  resid_all
+    ## observed = 0.077076, expected = -0.020000, sd = 0.054740, p-value =
+    ## 0.07616
+    ## alternative hypothesis: Distance-based autocorrelation
+
+``` r
+testSpatialAutocorrelation(resid_auto_correlation, x = coord$longitude, y = coord$latitude, plot = FALSE)
+```
+
+    ## 
+    ##  DHARMa Moran's I test for distance-based autocorrelation
+    ## 
+    ## data:  resid_auto_correlation
+    ## observed = 0.030199, expected = -0.020000, sd = 0.055002, p-value =
+    ## 0.3614
+    ## alternative hypothesis: Distance-based autocorrelation
+
+``` r
 plot_spatial_pattern(resid_no_effect$scaledResiduals, main = "DHARMa residuals with no prectors")
 ```
 
@@ -262,29 +337,20 @@ var_colapsed <- colapsed_variogram(var)
 var_auto_cor <- Variogram(resid_auto_correlation$scaledResiduals, distance = dist(coord[,2:3]))
 var_auto_cor_colapsed <- colapsed_variogram(var_auto_cor)
 
-plot(var_no_effect_colapsed)
+plot_variogram(var_no_effect_colapsed, cex.lab = 1.25, cex.main =1.5, weights = TRUE)
 ```
 
 ![](spatial_analyses_files/figure-gfm/unnamed-chunk-7-7.png)<!-- -->
 
 ``` r
-plot(var_colapsed)
+plot_variogram(var_colapsed, cex.lab = 1.25, cex.main =1.5, weights = TRUE)
 ```
 
 ![](spatial_analyses_files/figure-gfm/unnamed-chunk-7-8.png)<!-- -->
 
 ``` r
-plot(var_auto_cor_colapsed)
+plot_variogram(var_auto_cor_colapsed, cex.lab = 1.25, cex.main =1.5, weights = TRUE)
 ```
-
-    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric = FALSE, :
-    ## pseudoinverse used at 0.75633
-
-    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric = FALSE, :
-    ## neighborhood radius 0.25139
-
-    ## Warning in simpleLoess(y, x, w, span, degree = degree, parametric = FALSE, :
-    ## reciprocal condition number 0
 
 ![](spatial_analyses_files/figure-gfm/unnamed-chunk-7-9.png)<!-- -->
 
@@ -292,11 +358,11 @@ plot(var_auto_cor_colapsed)
 
 As we can see, our model do eliminate most of the spatial patterns
 observed in our response variable. When we look at the Semivariograms we
-can see that our best model is sufficient to elimate a pattern of
+can see that our best model is sufficient to eliminate a pattern of
 increase in semivariance with distance. In fact, we are left with a
 pattern of decrease in semivariance for samples that are very far apart.
 Meaning that samples far apart are more similar that samples close to
 each other. The probable explanation for that is that forested
 watersheds mostly occur at the margins of our sample design.
-Unfortunately this is could be accounted for the available spatial
-aucorrelation structures.
+Unfortunately, this could not be accounted for the available spatial
+autocorrelation structures.

@@ -13,7 +13,13 @@ library(glmmTMB)
 library(dplyr)
 
 
-caminho <- "C:/Users/rodol/OneDrive/Trabalho/Projetos/Colaborações/Manuscrito fármacos/Análises_antidepressivos/Resultados/Resultados Antidepressivos/Figuras/PNG/"
+
+source("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/scripts/functions/plot_models_one_var.R")
+source("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/scripts/functions/plot_models_two_var.R")
+source("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/scripts/functions/confidence_interval.R")
+
+caminho <- "C:/Users/rodol/OneDrive/repos/Antidepressants_sp/Resultados/Resultados Antidepressivos/Figuras/PDF/"
+
 
 
 
@@ -55,4 +61,6 @@ models <- get.models(dredge_modelos_Tricyclic, subset = delta < 2)
 aictab(models)
 
 write.table(data.frame(as.matrix(dredge_modelos_Tricyclic)), "Resultados/model_selection_Tricyclic.csv", sep = ",")
+
+
 
