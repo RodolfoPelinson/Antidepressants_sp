@@ -1,18 +1,9 @@
----
-title: "RDA"
-author: "Rodolfo Pelinson"
-date: "2024-11-14"
-output: html_document
-editor_options: 
-  chunk_output_type: console
----
+RDA
+================
+Rodolfo Pelinson
+2024-11-14
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-
-```{r, message=FALSE, warning=FALSE}
+``` r
 source("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/scripts/ajeitando_planilhas.R")
 
 pred_mod_sel <- select(predictors, area, declividade, IC, discharge, imperm, casas_sem_saneamento, renda, habitantes)
@@ -30,26 +21,44 @@ pred_mod_sel_stand <- decostand(pred_mod_sel,  method = "stand")
 rda <- rda(X = data_farmacos, Y =  pred_mod_sel_stand)
 
 anova(rda)
-RsquareAdj (rda)
+```
 
+    ## Permutation test for rda under reduced model
+    ## Permutation: free
+    ## Number of permutations: 999
+    ## 
+    ## Model: rda(X = data_farmacos, Y = pred_mod_sel_stand)
+    ##          Df Variance      F Pr(>F)  
+    ## Model     8   5406.1 2.3209  0.011 *
+    ## Residual 42  12228.8                
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+``` r
+RsquareAdj (rda)
+```
+
+    ## $r.squared
+    ## [1] 0.306558
+    ## 
+    ## $adj.r.squared
+    ## [1] 0.1744738
+
+``` r
 #plot(rda, scaling = 0)
 #plot(rda, scaling = 1)
 #plot(rda, scaling = 2)
 #plot(rda, scaling = 3)
-
 ```
 
-
-```{r, message=FALSE, warning=FALSE}
+``` r
 library(shape)
 library(vegan)
 library(dplyr)
 library(scales)
 ```
 
-
-```{r, message=FALSE, warning=FALSE, fig.width=8, fig.align='center', fig.asp = 0.75}
-
+``` r
 pal <- col_numeric(
   palette = c("white", "black"),
   domain = urb,
@@ -145,7 +154,7 @@ par(new=TRUE, mar = c(0,0,0,0))
 plot(NA, type = "n", xlim = c(0,100), xaxt = "n", yaxt = "n", xlab = "", ylab = "", axes = F, ylim = c(0,100))
 
 legend(x = 0, y = 5,
-       legend = unique(data_farmacos_class), bty = "n", cex = 1, ncol = 4, lty = 0, lwd = 3,text.width	= c(10, 20, 10), text.col = unique(col_classes), text.font = 2)
+       legend = unique(data_farmacos_class), bty = "n", cex = 1, ncol = 4, lty = 0, lwd = 3,text.width  = c(10, 20, 10), text.col = unique(col_classes), text.font = 2)
 
 #library(grDevices)
 legend_image <- as.raster(matrix(pal(0:100), ncol=1))
@@ -155,7 +164,6 @@ axis(4, at=c(22, (22+92)/2, 92), pos=97, labels= F, tck=-.01, las = 1, cex.axis 
 axis(4, at=c(22, (22+92)/2, 92), pos=96, labels= c("100","50","0"), tick = FALSE, las = 1, cex.axis = 0.8) 
 
 text(x = c(94,94), y = c(100,95), labels = c("Urban", "cover"), adj = 0.5, cex.axis = 0.8)
-
-#dev.off()
 ```
 
+<img src="RDA_files/figure-gfm/unnamed-chunk-3-1.png" style="display: block; margin: auto;" />
