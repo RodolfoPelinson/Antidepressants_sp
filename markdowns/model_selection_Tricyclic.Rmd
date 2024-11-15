@@ -1,0 +1,94 @@
+---
+title: "Predictors of total concentration of Tricyclic antidepressants in streamwater"
+author: "Rodolfo Pelinson"
+date: "2024-11-15"
+output: github_document
+editor_options: 
+  chunk_output_type: console
+---
+
+Packages:
+```{r, message=FALSE, warning=FALSE}
+library(DHARMa)
+library(AICcmodavg)
+library(corrplot)
+library(MuMIn)
+library(vegan)
+library(car)
+library(lme4)
+library(glmmTMB)
+library(dplyr)
+```
+
+A few necessary functions to make the code more straightforward:
+```{r, message = FALSE, warning=FALSE}
+source("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/scripts/functions/plot_models_one_var.R")
+source("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/scripts/functions/plot_models_two_var.R")
+source("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/scripts/functions/confidence_interval.R")
+```
+
+
+
+Performing the model selection procedure. Note that the name of the variables are in portuguese. 
+
+Habitantes mean inhabitants
+casas_sem_saneamento means houses without sanitation
+renda means income.
+
+First we make a matrix to check which pairs of variables are correlated (more than 50%) and therefore should not be together in the same model.
+```{r, message = FALSE, warning=FALSE}
+source("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/scripts/ajeitando_planilhas.R")
+
+pred_mod_sel <- select(predictors,  casas_sem_saneamento, renda, habitantes)
+
+#Standardizing response variables
+Preditoras_stand <- decostand(pred_mod_sel, method = "stand")
+
+smat <- abs(cor(Preditoras_stand)) <= .5
+smat[!lower.tri(smat)] <- NA
+
+colnames(smat) <- c(paste("cond(",colnames(smat)[1], ")", sep = ""),
+                    paste("cond(",colnames(smat)[2], ")", sep = ""),
+                    paste("cond(",colnames(smat)[3], ")", sep = ""))
+
+rownames(smat) <- colnames(smat)
+
+cor(Preditoras_stand)
+smat
+```
+
+Now performing the model selection.
+```{r}
+Preditoras_stand$Tricyclic <- responses$Tricyclic
+
+mod_global_Tricyclic <- glmmTMB(Tricyclic ~ 
+                            #area +
+                            casas_sem_saneamento +
+                            habitantes +
+                            renda + 
+                            casas_sem_saneamento:renda+
+                            #casas_sem_saneamento:renda:area+
+                            habitantes:renda,
+                            #habitantes:renda:area+
+                            #casas_sem_saneamento:area+
+                            #habitantes:area+
+                            #renda:area,
+                          data = Preditoras_stand, family = tweedie(link = "log"), na.action = "na.fail")
+
+
+dredge_modelos_Tricyclic <- MuMIn::dredge(mod_global_Tricyclic, subset = smat)
+
+models <- get.models(dredge_modelos_Tricyclic, subset = delta < 2)
+
+aictab(models)
+
+dredge_modelos_Tricyclic
+```
+
+Selected models include many combinations of predictors, excluding inhuabitants. It also includes the model with no predictors
+
+
+```{r, eval = FALSE, echo = FALSE, include = FALSE}
+write.table(data.frame(as.matrix(dredge_modelos_Tricyclic)), "Resultados/model_selection_Tricyclic.csv", sep = ",")
+```
+

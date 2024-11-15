@@ -1,0 +1,112 @@
+---
+title: "Histogram"
+author: "Rodolfo Pelinson"
+date: "2024-11-15"
+output: github_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r, echo = FALSE, include=FALSE, message=FALSE, warning=FALSE}
+basico_sp1 <- read.csv("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/data/seleção para checagem de padroes RMSP/Basico_SP1_2.csv")
+basico_sp2 <- read.csv("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/data/seleção para checagem de padroes RMSP/Basico_SP2_2.csv")
+
+domicilio01_SP1 <- read.csv("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/data/seleção para checagem de padroes RMSP/Domicilio01_SP1_2.csv")
+domicilio01_SP2 <- read.csv("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/data/seleção para checagem de padroes RMSP/Domicilio01_SP2_2.csv")
+
+domicilio02_SP1 <- read.csv("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/data/seleção para checagem de padroes RMSP/Domicilio02_SP1_2.csv")
+domicilio02_SP2 <- read.csv("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/data/seleção para checagem de padroes RMSP/Domicilio02_SP2_2.csv")
+
+domicilio_renda_SP1 <- read.csv("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/data/seleção para checagem de padroes RMSP/DomicilioRenda_SP1_2.csv")
+domicilio_renda_SP2 <- read.csv("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/data/seleção para checagem de padroes RMSP/DomicilioRenda_SP2_2.csv")
+
+source("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/scripts/ajeitando_planilhas.R")
+
+nrow(basico_sp1)
+#nrow(domicilio01_SP1)
+nrow(domicilio02_SP1)
+
+nrow(basico_sp2)
+#nrow(domicilio01_SP2)
+nrow(domicilio02_SP2)
+
+nrow(domicilio_renda_SP2)
+
+#terá os 38 municípios da Região Metropolitana de São Paulo MENOS a cidade de São Paulo, que terá que vir da outra planilha
+
+ncol(domicilio01_SP1)
+ncol(domicilio01_SP2)
+
+cod_setor_sp <- domicilio01_SP1$Cod_setor
+cod_setor_restante <- domicilio01_SP2$Cod_setor[]
+
+
+
+setores_RM_SP <- which(basico_sp2$Nome_da_meso == "Metropolitana de Sao Paulo" & basico_sp2$Nome_da_RM == "RM Sao Paulo")
+
+moradores_SP <- domicilio02_SP1$V002
+moradores_RM_SP <- as.numeric(domicilio02_SP2$V002[setores_RM_SP])
+
+#domicilio02_SP2$V002[setores_RM_SP][which(is.na(moradores_RM_SP))]
+
+renda_SP <- domicilio_renda_SP1$V003
+renda_RM_SP <- as.numeric(domicilio_renda_SP2$V003[setores_RM_SP])
+
+moradores <- c(moradores_SP, moradores_RM_SP)
+renda <- c(renda_SP, renda_RM_SP)
+
+inhabitants <- moradores
+income <- renda
+
+```
+
+
+Checking the vectors:
+```{r}
+head(inhabitants)
+head(income)
+
+length(inhabitants)
+length(income)
+
+```
+
+transforming income into per capita income and changing the currency to dollars.
+```{r}
+dolar <- 1.7485
+
+income_per_capita <- na.omit(income/inhabitants)
+
+income_per_capita <- income_per_capita/dolar
+
+```
+
+
+Plotting:
+```{r, fig.align='center', fig.width=8, fig.asp=0.8}
+par(mar = c(4,4,0.1,0.1), cex.lab = 1.2)
+hist(income_per_capita, breaks = seq(from = 0, to = 26500/1.7485, by = 250/1.7485), xlim = c(0,5000), xlab = "Average Income (US$)", main = "", lwd = 0.5)
+abline(v = min(predictors$renda)/dolar, lty = 2, col = "red", lwd = 1)
+abline(v = max(predictors$renda)/dolar, lty = 2, col = "red", lwd = 1)
+box(bty = "l")
+
+```
+
+
+
+```{r, eval = FALSE, echo = FALSE, include=FALSE}
+
+caminho <- "C:/Users/rodol/OneDrive/repos/Antidepressants_sp/Resultados/Resultados Antidepressivos/Figuras/PDF/"
+
+
+pdf(paste(caminho, "HISTOGRAMA.pdf", sep = ""), width = 4, height = 3.5, pointsize = 7)
+par(mar = c(4,4,0.1,0.1), cex.lab = 1.2)
+hist(income_per_capita, breaks = seq(from = 0, to = 26500/1.7485, by = 250/1.7485), xlim = c(0,5000), xlab = "Average Income (US$)", main = "", lwd = 0.5)
+abline(v = min(predictors$income)/1.7485, lty = 2, col = "red", lwd = 1)
+abline(v = max(predictors$income)/1.7485, lty = 2, col = "red", lwd = 1)
+box(bty = "l")
+
+dev.off()
+```
+
