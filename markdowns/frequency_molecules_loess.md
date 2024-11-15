@@ -1,85 +1,54 @@
----
-title: "Frequency of molecules across the gradient in urban cover"
-author: "Rodolfo Pelinson"
-date: "2024-11-14"
-output: github_document
-editor_options: 
-  chunk_output_type: console
----
-
-```{r,  echo= FALSE, eval = TRUE, warning=FALSE, message=FALSE, include=FALSE}
-library(vegan)
-library(shape)
-library(scales)
-library(metacom)
-library(AICcmodavg)
-library(bbmle)
-
-data_farmacos <- read.csv("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/data/antidepressivos_r.csv")
-data_farmacos <- data_farmacos[,which(colnames(data_farmacos)!="Norfluoxetina")]
-data_general <- read.csv("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/data/planilha_master_r.csv")
-
-data_farmacos_reference <- data_farmacos[1,]
-data_farmacos_class <- data_farmacos[2,]
-data_farmacos <- data_farmacos[-c(1,2),]
-
-data_farmacos$urb <- data_general$urb[match(data_farmacos$bacia,data_general$microbacia)]
-
-data.frame(data_farmacos$bacia, data_farmacos$urb, data_farmacos$Decil)
-
-data_farmacos$urb[data_farmacos$bacia == "ebb008" | 
-                    data_farmacos$bacia == "ebb009" |
-                    data_farmacos$bacia == "ebb011" |
-                    data_farmacos$bacia == "ebb012"] <- 0 
-
-
-data_farmacos$urb[is.na(data_farmacos$urb)] <- data_farmacos$Decil[is.na(data_farmacos$urb)] + 5
-
-data.frame(data_farmacos$bacia, data_farmacos$urb, data_farmacos$Decil)
-
-
-urb <- data_farmacos$urb
-Decil <- data_farmacos$Decil
-bacia <- data_farmacos$bacia
-
-data_farmacos <- data_farmacos[,-c(1,2,ncol(data_farmacos))]
-data_farmacos_reference <- data_farmacos_reference[,-c(1,2)]
-
-data_farmacos <- data.frame(lapply(data_farmacos,as.numeric))
-
-data_farmacos <- data_farmacos[,colSums(data_farmacos) > 0]
-
-data_farmacos <- data_farmacos[,order(colSums(data_farmacos), decreasing = TRUE)]
-
-library(vegan)
-
-data_farmacos_pa <- decostand(data_farmacos, method = "pa")
-
-freq <- function(x){
-  freq <- sum(x)/length(x)
-  return(freq)
-}
-
-frequencies <- list()
-
-for(i in 1:ncol(data_farmacos_pa)){
-  frequencies[[i]] <- tapply(data_farmacos_pa[,i], INDEX = Decil, freq)
-  names(frequencies)[i] <- colnames(data_farmacos_pa)[i]
-}
-
-frequencies <- lapply(frequencies, as.numeric)
-
-Decil_unique <- unique(Decil)
-```
-
+Frequency of molecules across the gradient in urban cover
+================
+Rodolfo Pelinson
+2024-11-14
 
 The frequency data:
-```{r}
+
+``` r
 data.frame(urban_cover = Decil_unique, as.data.frame(frequencies))
 ```
 
+    ##    urban_cover O.desmethylvenlafaxine Desmethylcitalopram Hydroxybupropion
+    ## 1            0                   0.00                0.00             0.00
+    ## 2           10                   0.75                0.25             0.75
+    ## 3           20                   0.75                0.25             0.50
+    ## 4           30                   1.00                0.00             0.75
+    ## 5           40                   0.75                0.50             0.75
+    ## 6           50                   1.00                0.00             0.50
+    ## 7           60                   1.00                0.50             1.00
+    ## 8           70                   0.75                0.25             0.50
+    ## 9           80                   0.80                0.40             0.40
+    ## 10          90                   1.00                0.75             0.75
+    ## 11         100                   1.00                1.00             0.75
+    ##    Amitriptyline Sertraline Venlafaxine Fluoxetine Citalopram Bupropion
+    ## 1           0.00       0.00        0.00       0.00       0.00      0.00
+    ## 2           0.00       0.00        0.25       0.00       0.00      0.25
+    ## 3           0.25       0.25        0.50       0.00       0.25      0.00
+    ## 4           0.25       0.25        0.00       0.25       0.00      0.00
+    ## 5           0.75       0.50        0.75       0.75       0.00      0.00
+    ## 6           0.00       0.25        0.25       0.00       0.00      0.25
+    ## 7           0.50       0.50        0.50       0.25       0.50      0.25
+    ## 8           0.50       0.50        0.50       0.50       0.25      0.00
+    ## 9           0.60       0.80        0.60       0.60       0.20      0.00
+    ## 10          0.75       1.00        0.75       0.75       0.50      0.25
+    ## 11          0.50       0.75        0.50       0.50       0.25      0.25
+    ##    Trimipramine
+    ## 1          0.00
+    ## 2          0.00
+    ## 3          0.00
+    ## 4          0.00
+    ## 5          0.25
+    ## 6          0.00
+    ## 7          0.00
+    ## 8          0.00
+    ## 9          0.00
+    ## 10         0.00
+    ## 11         0.00
+
 Fitting the loess functions:
-```{r, fig.width=10, fig.align= "center", message = FALSE}
+
+``` r
 source("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/scripts/functions/loess_func.R")
 
 span <- 1
@@ -97,12 +66,11 @@ Citalopram_model <- loess_func(frequencies$Citalopram, x =Decil_unique,  span = 
 Fluoxetine_model <- loess_func(frequencies$Fluoxetine, x =Decil_unique,  span = span, weights = weights, degree = degree)
 Amitriptyline_model <- loess_func(frequencies$Amitriptyline, x =Decil_unique,  span = span, weights = weights, degree = degree)
 Trimipramine_model <- loess_func(frequencies$Trimipramine, x =Decil_unique,  span = span, weights = weights, degree = degree)
-
 ```
 
-
 Code to plot these curves:
-```{r, fig.asp=1.3, fig.width=8, fig.align= "center", dev.args=list(pointsize = 15)}
+
+``` r
 ############### Sertraline ###############
 
 Sertraline_plot <- function(){
@@ -280,12 +248,11 @@ Trimipramine_plot <- function(){
   points(x = Decil_unique, y = frequencies$Trimipramine, pch = 16, cex = cex.points)
   box()
 }
-
 ```
 
-
 Plotting the curves:
-```{r, fig.asp=1.3, fig.width=10, fig.align= "center", dev.args=list(pointsize = 15)}
+
+``` r
 ylab.cex <- 0.9
 xlab.cex <- 0.9
 axis.cex <- 0.75
@@ -312,13 +279,13 @@ Citalopram_plot()
 Bupropion_plot()
 Trimipramine_plot()
 #Norfluoxetina_plot()
-
 ```
 
+<img src="frequency_molecules_loess_files/figure-gfm/unnamed-chunk-5-1.png" style="display: block; margin: auto;" />
 
 Plotting the curves together:
-```{r, fig.asp=1, fig.width=8, fig.align= "center", dev.args=list(pointsize = 20)}
 
+``` r
 lines <- list(O.desmethylvenlafaxine_model,
               Desmethylcitalopram_model,
               Hydroxybupropion_model,
@@ -366,10 +333,10 @@ plot_loess <- function(letter = "", x_letter = 0, y_letter = 100){
   plot(NA, type = "n", xlim = c(0,100), xaxt = "n", yaxt = "n", xlab = "", ylab = "", axes = F, ylim = c(0,100))
   
   legend(x = 2.5, y = 15,
-         legend = names, bty = "n", col = bg, cex = 0.9, ncol = 3, lty = 1, lwd = 3.5, text.width	= c(32.5, 17.5))
+         legend = names, bty = "n", col = bg, cex = 0.9, ncol = 3, lty = 1, lwd = 3.5, text.width   = c(32.5, 17.5))
   
   legend(x = 2.5, y = 15,
-         legend = names, bty = "n", col = Cols, cex = 0.9, ncol = 3, lty = 1, lwd = 2, text.width	= c(32.5, 17.5))
+         legend = names, bty = "n", col = Cols, cex = 0.9, ncol = 3, lty = 1, lwd = 2, text.width   = c(32.5, 17.5))
   
   text(x = x_letter, y = y_letter, labels = letter, font = 2, cex = 1.5, adj = 0)
   par(mar = margins)
@@ -379,27 +346,6 @@ plot_loess <- function(letter = "", x_letter = 0, y_letter = 100){
 
 par(mfrow= c(1,1))
 plot_loess()
-
 ```
 
-
-
-```{r, eval = FALSE, echo=FALSE, include=FALSE, fig.asp=0.5, fig.width=10, fig.align= "center"}
-pdf("Resultados/Resultados Antidepressivos/Figuras/PDF/Antidepressivos_loess_frequency_degree_2_smooth_1.pdf", width = 6, height = 6)
-par(mfrow = c(4,3), mar = c(3.5,3.5,0.5,0.5))
-
-O.desmethylvenlafaxine_plot()
-Desmethylcitalopram_plot()
-Hydroxybupropion_plot()
-Amitriptyline_plot()
-Sertraline_plot()
-Venlafaxine_plot()
-Fluoxetine_plot()
-Citalopram_plot()
-Bupropion_plot()
-Trimipramine_plot()
-#Norfluoxetina_plot()
-
-dev.off()
-```
-
+<img src="frequency_molecules_loess_files/figure-gfm/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />

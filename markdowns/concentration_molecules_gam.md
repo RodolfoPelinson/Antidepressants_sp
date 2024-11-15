@@ -1,88 +1,9 @@
----
-title: "Concentration of molecules by class across the gradient in urban cover"
-author: "Rodolfo Pelinson"
-date: "2024-11-13"
-output: github_document
-editor_options: 
-  chunk_output_type: console
----
+Concentration of molecules by class across the gradient in urban cover
+================
+Rodolfo Pelinson
+2024-11-13
 
-```{r,  echo= FALSE, eval = TRUE, warning=FALSE, message=FALSE, include=FALSE}
-library(vegan)
-library(shape)
-library(scales)
-library(metacom)
-library(AICcmodavg)
-library(bbmle)
-
-data_farmacos <- read.csv("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/data/antidepressivos_r.csv")
-data_farmacos <- data_farmacos[,which(colnames(data_farmacos)!="Norfluoxetina")]
-data_general <- read.csv("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/data/planilha_master_r.csv")
-
-data_farmacos_reference <- data_farmacos[1,]
-data_farmacos_class <- data_farmacos[2,]
-data_farmacos <- data_farmacos[-c(1,2),]
-
-data_farmacos$urb <- data_general$urb[match(data_farmacos$bacia,data_general$microbacia)]
-
-data.frame(data_farmacos$bacia, data_farmacos$urb, data_farmacos$Decil)
-
-data_farmacos$urb[data_farmacos$bacia == "ebb008" | 
-                    data_farmacos$bacia == "ebb009" |
-                    data_farmacos$bacia == "ebb011" |
-                    data_farmacos$bacia == "ebb012"] <- 0 
-
-
-data_farmacos$urb[is.na(data_farmacos$urb)] <- data_farmacos$Decil[is.na(data_farmacos$urb)] + 5
-
-urb <- data_farmacos$urb
-Decil <- data_farmacos$Decil
-bacia <- data_farmacos$bacia
-
-data_farmacos <- data_farmacos[,-c(1,2,ncol(data_farmacos))]
-data_farmacos_reference <- data_farmacos_reference[,-c(1,2)]
-data_farmacos_class <- data_farmacos_class[,-c(1,2)]
-
-data_farmacos <- data.frame(lapply(data_farmacos,as.numeric))
-
-data_farmacos_reference <- data_farmacos_reference[,colSums(data_farmacos)>0]
-data_farmacos_class <- data_farmacos_class[,colSums(data_farmacos) > 0]
-data_farmacos <- data_farmacos[,colSums(data_farmacos) > 0]
-
-
-data_farmacos_class <- unlist(c(data_farmacos_class))
-data_farmacos_reference <- unlist(c(data_farmacos_reference))
-
-classess <- unique(data_farmacos_class)
-
-data_farmacos_by_class <- list()
-
-for(i in 1:length(classess)){
-  sums <- rowSums(data_farmacos[,data_farmacos_class == classess[i]]) 
-  data_farmacos_by_class[[i]] <- sums
-  names(data_farmacos_by_class)[i] <- classess[i]
-}
-
-data_farmacos_by_class <- data.frame(bacia, Decil, urb, data_farmacos_by_class)
-
-data_farmacos_class
-
-LQ <- tapply(data_farmacos_reference, INDEX = data_farmacos_class, unique)
-
-
-weights <- rep(1,length(data_farmacos_by_class$urb))
-weights[data_farmacos_by_class$urb == 0] <- 1
-
-data_farmacos_by_class$all <- data_farmacos_by_class$SNRI +
-  data_farmacos_by_class$Aminoketone + 
-  data_farmacos_by_class$SSRI+ 
-  data_farmacos_by_class$Tricyclic
-
-
-```
-
-
-```{r, message=FALSE, warning=FALSE}
+``` r
 library(vegan)
 library(shape)
 library(scales)
@@ -92,48 +13,122 @@ library(mgcv)
 library(DHARMa)
 ```
 
+Here we use a custom function that I made to fit several gam models with
+different maximum numbers of k and than make model selection using AICc.
+This function uses the gam function from mgcv package.
 
-Here we use a custom function that I made to fit several gam models with different maximum numbers of k and than make model selection using AICc. This function uses the gam function from mgcv package.
-
-```{r, fig.width=10, fig.align= "center", message = FALSE}
+``` r
 source("C:/Users/rodol/OneDrive/repos/Antidepressants_sp/scripts/functions/select_gam.R")
 
 all_model <- select_gam(y = data_farmacos_by_class$all, x = data_farmacos_by_class$urb, drop.intercept = FALSE, family = "tw")
 par(mfrow = c(1,2))
 plotQQunif(simulateResiduals(all_model$best_model), testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
 plotResiduals(simulateResiduals(all_model$best_model), quantreg = FALSE, smoothScatter = FALSE, absoluteDeviation = FALSE)
-all_model$AICTAB
+```
 
+<img src="concentration_molecules_gam_files/figure-gfm/unnamed-chunk-3-1.png" style="display: block; margin: auto;" />
+
+``` r
+all_model$AICTAB
+```
+
+    ##            dAICc       df
+    ## gam_1  0.0000000 4.934877
+    ## gam_3  0.7151645 5.383505
+    ## gam_4  0.7203470 5.384592
+    ## gam_2  0.7206512 5.335777
+    ## gam_0 14.8968302 3.000000
+
+``` r
 SNRI_model <- select_gam(y = data_farmacos_by_class$SNRI, x = data_farmacos_by_class$urb, drop.intercept = FALSE, family = "tw")
 plotQQunif(simulateResiduals(SNRI_model$best_model), testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
 plotResiduals(simulateResiduals(SNRI_model$best_model), quantreg = FALSE, smoothScatter = FALSE, absoluteDeviation = FALSE)
-SNRI_model$AICTAB
+```
 
+<img src="concentration_molecules_gam_files/figure-gfm/unnamed-chunk-3-2.png" style="display: block; margin: auto;" />
+
+``` r
+SNRI_model$AICTAB
+```
+
+    ##           dAICc       df
+    ## gam_1  0.000000 4.971406
+    ## gam_3  0.847510 5.855211
+    ## gam_4  0.858759 5.859625
+    ## gam_2  0.984332 5.689185
+    ## gam_0 12.336915 3.000000
+
+``` r
 SSRI_model <- select_gam(y = data_farmacos_by_class$SSRI, x = data_farmacos_by_class$urb, drop.intercept = FALSE, family = "tw")
 plotQQunif(simulateResiduals(SSRI_model$best_model), testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
 plotResiduals(simulateResiduals(SSRI_model$best_model), quantreg = FALSE, smoothScatter = FALSE, absoluteDeviation = FALSE)
-SSRI_model$AICTAB
+```
 
+<img src="concentration_molecules_gam_files/figure-gfm/unnamed-chunk-3-3.png" style="display: block; margin: auto;" />
+
+``` r
+SSRI_model$AICTAB
+```
+
+    ##              dAICc       df
+    ## gam_2 0.000000e+00 3.996361
+    ## gam_3 9.318455e-05 3.996417
+    ## gam_4 1.664282e-04 3.996462
+    ## gam_1 5.799568e-03 4.000204
+    ## gam_0 1.033666e+01 3.000000
+
+``` r
 Aminoketone_model <- select_gam(y = data_farmacos_by_class$Aminoketone, x = data_farmacos_by_class$urb, drop.intercept = FALSE, family = "tw")
 plotQQunif(simulateResiduals(Aminoketone_model$best_model), testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
 plotResiduals(simulateResiduals(Aminoketone_model$best_model), quantreg = FALSE, smoothScatter = FALSE, absoluteDeviation = FALSE)
-Aminoketone_model$AICTAB
+```
 
+<img src="concentration_molecules_gam_files/figure-gfm/unnamed-chunk-3-4.png" style="display: block; margin: auto;" />
+
+``` r
+Aminoketone_model$AICTAB
+```
+
+    ##              dAICc       df
+    ## gam_3 0.000000e+00 3.986598
+    ## gam_2 2.582694e-05 3.986612
+    ## gam_1 1.068387e-04 3.986655
+    ## gam_4 5.059569e-04 3.986877
+    ## gam_0 5.745772e+00 3.000000
+
+``` r
 Tricyclic_model <- select_gam(y = data_farmacos_by_class$Tricyclic, x = data_farmacos_by_class$urb, drop.intercept = FALSE, family = "tw")
 plotQQunif(simulateResiduals(Tricyclic_model$best_model), testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
 plotResiduals(simulateResiduals(Tricyclic_model$best_model), quantreg = FALSE, smoothScatter = FALSE, absoluteDeviation = FALSE)
-Tricyclic_model$AICTAB
-
 ```
 
-Our models generally fitted well within the chosen statistical distribution (tweedie). Residuals sometimes exhibited somewhat lower values for low fitted values for the total concentration of antidepressants, which might indicate that there might be other important predictors to the number of antidepressants found in streamwater. Still, all models including urban cover as a predictor was considered by far more plausible than the model without any effect of urban cover. 
+<img src="concentration_molecules_gam_files/figure-gfm/unnamed-chunk-3-5.png" style="display: block; margin: auto;" />
 
-\ 
-\ 
+``` r
+Tricyclic_model$AICTAB
+```
+
+    ##           dAICc       df
+    ## gam_1 0.0000000 4.861973
+    ## gam_2 0.5781168 4.919037
+    ## gam_3 0.6025203 4.916492
+    ## gam_4 0.6043680 4.913566
+    ## gam_0 7.1729546 3.000000
+
+Our models generally fitted well within the chosen statistical
+distribution (tweedie). Residuals sometimes exhibited somewhat lower
+values for low fitted values for the total concentration of
+antidepressants, which might indicate that there might be other
+important predictors to the number of antidepressants found in
+streamwater. Still, all models including urban cover as a predictor was
+considered by far more plausible than the model without any effect of
+urban cover.
+
+   
 
 Ploting the best models:
 
-```{r, fig.asp=1.3, fig.width=8, fig.align= "center", dev.args=list(pointsize = 15)}
+``` r
 ylab.cex <- 0.9
 xlab.cex <- 0.9
 axis.cex <- 0.75
@@ -264,50 +259,6 @@ SSRI_plot(letter = "B)")
 SNRI_plot(letter = "C)")
 Aminoketone_plot(letter = "D)")
 Tricyclic_plot(letter = "E)")
-
-
 ```
 
-
-```{r, eval = FALSE, echo=FALSE, include=FALSE, fig.asp=1, fig.width=10, fig.align= "center"}
-
-pdf("Resultados/Resultados Antidepressivos/Figuras/PDF/Antidepressivos_GAM_by_class_SEM_ZERO.pdf", width = 4, height = 3, pointsize = 9)
-par(mfrow = c(3,2), mar = c(2.5,3.5,1.2,0.25))
-
-all_plot(letter = "A)")
-SSRI_plot(letter = "B)")
-SNRI_plot(letter = "C)")
-Aminoketone_plot(letter = "D)")
-Tricyclic_plot(letter = "E)")
-
-
-dev.off()
-
-```
-
-
-
-```{r, eval = FALSE, echo=FALSE, include=FALSE, fig.asp=0.5, fig.width=10, fig.align= "center"}
-
-model_tabs_by_class <- list(SNRI_model$AICTAB,
-  SSRI_model$AICTAB,
-  Aminoketone_model$AICTAB,
-  Tricyclic_model$AICTAB)
-
-names(model_tabs_by_class) <- c("SNRI",
-                       "SSRI",
-                       "Aminoketone",
-                       "Tricyclic")
-
-
-
-order <- c("gam_0","gam_1","gam_2","gam_3","gam_4")
-
-for(i in 1:length(model_tabs_by_class)){
-  model_tabs_by_class[[i]] <- model_tabs_by_class[[i]][match(order,rownames(model_tabs_by_class[[i]])),]
-}
-
-
-write.csv(model_tabs_by_class,"Resultados/model_selection_GAM_concentrations_by_class.csv")
-```
-
+<img src="concentration_molecules_gam_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
