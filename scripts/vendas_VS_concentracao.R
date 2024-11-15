@@ -1,4 +1,4 @@
-data_IQVIA <- read.csv("IQVIA_antidepressants_kgs.csv")
+data_IQVIA <- read.csv("data/IQVIA_antidepressants_kgs.csv")
 
 data_IQVIA_2021 <- data_IQVIA[data_IQVIA$year == 2021,]
 
@@ -70,7 +70,7 @@ Sums_farmacos <- Sums_farmacos[order(Sums_farmacos, decreasing = TRUE)]
 
 ##################################################################
 
-data_IQVIA_vs_encontrados <- read.csv("IQVIA_vs_moleculas_encontradas.csv")
+data_IQVIA_vs_encontrados <- read.csv("data/IQVIA_vs_moleculas_encontradas.csv")
 
 data_IQVIA_vs_encontrados
 
@@ -112,7 +112,7 @@ plot(simulateResiduals(mod_beta))
 #plot(simulateResiduals(mod_nb))
 
 AICc(mod_gaus)
-AICc(mod_pois)
+#AICc(mod_pois)
 #AICc(mod_nb)
 
 mod_gaus0 <- glmmTMB(frequencia~1, family = "gaussian", data = data_IQVIA_vs_encontrados)
@@ -130,9 +130,7 @@ predicted_ng_L <- predict(mod_tw, newdata = new_data, type = "response")
 predicted_freq <- predict(mod_gaus, newdata = new_data, type = "response")
 
 
-
-
-png(paste(caminho, "Vendas_VS_Encontrado_nomes.png", sep = ""), width = 10, height = 9, units = "cm", pointsize = 7, res = 600)
+pdf(paste(caminho, "Vendas_VS_Encontrado_nomes.pdf", sep = ""), width = 4, height = 3.5, pointsize = 7)
 
 par(mfrow = c(1,1),mar = c(3.5,3.55,1,0.1), bty = "l")
 
@@ -158,7 +156,7 @@ dev.off()
 
 
 
-png(paste(caminho, "Vendas_VS_Encontrado_pontos.png", sep = ""), width = 10, height = 9, units = "cm", pointsize = 7, res = 600)
+pdf(paste(caminho, "Vendas_VS_Encontrado_pontos.pdf", sep = ""), width = 4, height = 3.5, pointsize = 7)
 
 par(mfrow = c(1,1),mar = c(3.5,3.55,1,0.1), bty = "l")
 
@@ -186,9 +184,9 @@ dev.off()
 
 
 
-png(paste(caminho, "Vendas_VS_Encontrado_pontos_nomes.png", sep = ""), width = 10, height = 9, units = "cm", pointsize = 7, res = 600)
+pdf(paste(caminho, "Paper/Vendas_VS_Encontrado_pontos_nomes.pdf", sep = ""), width = 8, height = 3.5, pointsize = 7)
 
-par(mfrow = c(1,1),mar = c(3.5,3.55,1,0.1), bty = "l")
+par(mfrow = c(1,2),mar = c(3.5,3.55,1,0.1), bty = "l")
 
 
 plot(data_IQVIA_vs_encontrados$ng_L~data_IQVIA_vs_encontrados$kg , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "")
@@ -219,14 +217,14 @@ xcoord[labels == "Par"] <- xcoord[labels == "Par"] - 200
 xcoord[labels == "Mir"] <- xcoord[labels == "Mir"] + 1400
 
 text(xcoord, ycoord+150, labels = labels)
-dev.off()
+#dev.off()
 
 
 
 
-png(paste(caminho, "Vendas_VS_frequencia_pontos_nomes.png", sep = ""), width = 10, height = 9, units = "cm", pointsize = 7, res = 600)
+#pdf(paste(caminho, "Vendas_VS_frequencia_pontos_nomes.pdf", sep = ""), width = 4, height = 3.5, pointsize = 7)
 
-par(mfrow = c(1,1),mar = c(3.5,3.55,1,0.1), bty = "l")
+#par(mfrow = c(1,1),mar = c(3.5,3.55,1,0.1), bty = "l")
 
 plot(data_IQVIA_vs_encontrados$frequencia~data_IQVIA_vs_encontrados$kg , type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "")
 

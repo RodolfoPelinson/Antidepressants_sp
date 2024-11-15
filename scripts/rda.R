@@ -3,6 +3,9 @@ library(vegan)
 library(dplyr)
 library(scales)
 
+
+
+
 pred_mod_sel <- select(predictors, area, declividade, IC, discharge, imperm, casas_sem_saneamento, renda, habitantes)
 
 pred_names <- c("Area", "Slope", "CI", "Discharge", "Impermeabilization", "HWNS", "Average Income", "Inhabitants")

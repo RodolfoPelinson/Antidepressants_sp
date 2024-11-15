@@ -105,8 +105,14 @@ My_Imagine <- function (comm, col = c(0,1,"grey50"), order = TRUE, scores = 1, f
   
   #ploting
   par(mar = c(bottom_margin,left_margin, top_margin, right_margin), cex = 1)
-  image(1:dim(comm)[2], 1:dim(comm)[1], t(comm),  col = c(col, Empty_col),
-        xlab = "", ylab = "", axes = FALSE)
+  if(is.null(Empty) == FALSE){
+    image(1:dim(comm)[2], 1:dim(comm)[1], t(comm),  col = c(col, Empty_col),
+          xlab = "", ylab = "", axes = FALSE)
+  }else{
+    image(1:dim(comm)[2], 1:dim(comm)[1], t(comm),  col = c(col),
+          xlab = "", ylab = "", axes = FALSE)
+  }
+  
   title(xlab = xlab, line = xlab_line, cex.lab = cex.xlab, adj = 1)
   title(ylab = ylab, line = ylab_line, cex.lab = cex.ylab)
   title(main = main, line = main_line, cex.main = cex.main, adj = 0, font.main = 1)
